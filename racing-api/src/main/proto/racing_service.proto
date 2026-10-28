@@ -1,0 +1,13 @@
+syntax = "proto3";
+
+option java_multiple_files = true;
+package world.willfrog.racing.idl;
+
+import "common.proto";
+import "experiment_value.proto";
+
+// 业务入口统一鉴权与目标核对，再委托给各自业务服务。
+service RacingService {
+  rpc ConfirmRuntimeContext(ConfirmRuntimeContextRequest) returns (ConfirmRuntimeContextReply);
+  rpc Evaluate(EvaluateRequest) returns (EvaluateReply);
+}
