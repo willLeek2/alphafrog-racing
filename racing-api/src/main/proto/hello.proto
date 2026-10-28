@@ -1,0 +1,23 @@
+syntax = "proto3";
+
+option java_multiple_files = true;
+
+package world.willfrog.racing.idl;
+
+// 最小 RPC 服务，用于验证契约生成、服务注册及部署访问。
+service HelloService {
+  rpc SayHello(HelloRequest) returns (HelloReply);
+}
+
+message HelloRequest {
+  // 空白名称返回 Hello World；其余名称保留在问候语中。
+  string name = 1;
+}
+
+message HelloReply {
+  string message = 1;
+  // 部署环境注入的身份，供调用方核对实际处理请求的实例。
+  string deployment_id = 2;
+  string traffic_scope_id = 3;
+  string deployment_generation_id = 4;
+}

@@ -1,0 +1,23 @@
+spring:
+  application:
+    name: racing-server
+  main:
+    web-application-type: none
+
+dubbo:
+  application:
+    name: racing-server
+    # 与现有服务保持一致，使用接口级服务发现。
+    register-mode: interface
+  registry:
+    address: ${RACING_REGISTRY_ADDRESS:nacos://${NACOS_ADDRESS:127.0.0.1}:8848}
+    use-as-config-center: false
+    use-as-metadata-center: false
+  protocol:
+    name: tri
+    port: ${RACING_RPC_PORT:50071}
+  consumer:
+    check: false
+
+# Beta 的注册组、注册地址、端口和提供者 dubbo.tag 由部署环境注入。
+# 这些标准 Dubbo 属性可以通过 DUBBO_* 环境变量覆盖。
