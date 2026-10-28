@@ -63,6 +63,10 @@ public final class RpcSmokeClient {
             registry.setUseAsConfigCenter(false);
             registry.setUseAsMetadataCenter(false);
             registry.setGroup(System.getenv("DUBBO_REGISTRY_GROUP"));
+            if (directUrl == null) {
+                registry.setUsername(System.getenv("DUBBO_REGISTRY_USERNAME"));
+                registry.setPassword(System.getenv("DUBBO_REGISTRY_PASSWORD"));
+            }
 
             ReferenceConfig<HelloService> reference = new ReferenceConfig<>();
             reference.setInterface(HelloService.class);

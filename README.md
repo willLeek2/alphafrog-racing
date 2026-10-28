@@ -54,7 +54,7 @@ java -jar racing-server/target/racing-server-0.1.0-SNAPSHOT.jar \
   --expected-deployment-id local --expected-scope-id local)
 ```
 
-Beta 验证需要部署控制器先登记本项目及服务。客户端不指定 `--url` 时，通过 `RACING_REGISTRY_ADDRESS` 或 `DUBBO_REGISTRY_ADDRESS` 发现服务，注册组沿用 `DUBBO_REGISTRY_GROUP`。需要明确 Dubbo 业务分组或版本时，分别配置 `RACING_SERVICE_GROUP`、`RACING_SERVICE_VERSION`。
+Beta 验证需要部署控制器先登记本项目及服务。客户端不指定 `--url` 时，通过 `RACING_REGISTRY_ADDRESS` 或 `DUBBO_REGISTRY_ADDRESS` 发现服务，注册组沿用 `DUBBO_REGISTRY_GROUP`，注册用户名与口令分别通过 `DUBBO_REGISTRY_USERNAME`、`DUBBO_REGISTRY_PASSWORD` 环境变量传入。需要明确 Dubbo 业务分组或版本时，分别配置 `RACING_SERVICE_GROUP`、`RACING_SERVICE_VERSION`。
 
 本机存在代理虚拟网卡或多个网卡时，直接调用使用可达的本机网卡地址；需要固定绑定与注册地址时，分别设置标准 `DUBBO_IP_TO_BIND` 和 `DUBBO_IP_TO_REGISTRY` 环境变量。
 
