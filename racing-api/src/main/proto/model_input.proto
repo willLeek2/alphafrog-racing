@@ -1,0 +1,116 @@
+syntax = "proto3";
+
+option java_multiple_files = true;
+package world.willfrog.racing.idl;
+
+import "common.proto";
+import "prompt.proto";
+import "google/protobuf/timestamp.proto";
+
+enum ModelInputContentKind {
+  MODEL_INPUT_CONTENT_UNSPECIFIED = 0;
+  MODEL_INPUT_APPLICATION_INSTRUCTION = 1;
+  MODEL_INPUT_RUNTIME_DATA = 2;
+}
+
+message ModelInputMessageLocation {
+  // 最终待发送JSON中的消息序号，从0开始。
+  int32 message_index = 1;
+  string field_path = 2;
+}
+
+message ModelInputToolLocation {
+  string tool_name = 1;
+  string field_path = 2;
+}
+
+message ModelInputStructureLocation {
+  string field_path = 1;
+}
+
+message ModelInputToolResultLocation {
+  string tool_call_id = 1;
+  string field_path = 2;
+  optional int32 message_index = 3;
+}
+
+// 位置对应最终输入；历史被裁剪后不得保留已移除文字的来源。
+message ModelInputSourceBinding {
+  oneof location {
+    ModelInputMessageLocation message = 1;
+    ModelInputToolLocation tool_definition = 2;
+    ModelInputStructureLocation output_structure = 3;
+    ModelInputToolResultLocation tool_result = 4;
+  }
+  ModelInputContentKind content_kind = 5;
+  // 应用指令必须有明确版本；用户原话、模型输出和工具事实使用运行数据类型。
+  repeated PromptInstructionSource instruction_sources = 6;
+}
+
+message StoreModelInputRequest {
+  RuntimeCallContext context = 1;
+  // 一次逻辑调用使用一个UUID，模型客户端库内部重试沿用。
+  string logical_call_id = 2;
+  // 每次真正HTTP发送使用独立UUID；保存重发复用同一UUID和完整保存对象。
+  string attempt_uuid = 3;
+  // 保存序列化后的完整原文，不转换为Struct以免改写空白、字段顺序或数字。
+  // 不包含HTTP授权头等传输凭据。
+  string input_json = 4;
+  repeated ModelInputSourceBinding sources = 5;
+  // 业务端点名称不包含地址、认证头或其他传输凭据。
+  string endpoint_name = 6;
+  // 服务端独立计算并核对，不能只信任调用方提供的摘要。
+  int64 utf8_length = 7;
+  string sha256 = 8;
+}
+
+message ModelInputReceipt {
+  string model_input_id = 1;
+  string logical_call_id = 2;
+  string attempt_uuid = 3;
+  // 长度和摘要由服务端对已保存的原始UTF-8正文计算。
+  int64 utf8_length = 4;
+  string sha256 = 5;
+  google.protobuf.Timestamp stored_at = 6;
+}
+
+message StoreModelInputReply {
+  oneof result {
+    // 只有输入及版本引用同事务提交并确认后才返回；不代表模型已接收。
+    ModelInputReceipt stored = 1;
+    RacingError error = 2;
+  }
+  RuntimeIdentity actual_target = 3;
+}
+
+message ModelInputAttemptLocator {
+  string service_principal = 1;
+  string attempt_uuid = 2;
+}
+
+// 历史访问是否允许由共同服务入口决定，本消息不携带自报权限或产品用户令牌。
+message GetModelInputRequest {
+  RuntimeCallContext context = 1;
+  oneof locator {
+    string model_input_id = 2;
+    ModelInputAttemptLocator attempt = 3;
+  }
+}
+
+message ModelInputRecord {
+  ModelInputReceipt receipt = 1;
+  RuntimeCallContext context = 2;
+  // 由调用凭据解析并保存，不采信Store请求正文中的服务身份。
+  string service_principal = 3;
+  string input_json = 4;
+  repeated ModelInputSourceBinding sources = 5;
+  string endpoint_name = 6;
+}
+
+message GetModelInputReply {
+  oneof result {
+    ModelInputRecord model_input = 1;
+    RacingError error = 2;
+  }
+  RuntimeIdentity actual_target = 3;
+}
