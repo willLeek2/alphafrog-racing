@@ -25,7 +25,7 @@ public final class AuthorizedCall {
     public RuntimeCallContext context() { return context; }
     public RuntimeIdentity actualTarget() { return actualTarget; }
 
-    /** 结束实验时，离线就绪证明只接受另外授权的执行主体提交。 */
+    /** 启动、恢复或运行中发布离线配置时，就绪证明只接受另外授权的执行主体提交。 */
     public boolean maySubmitOfflineReadiness() {
         return actions.contains("SubmitOfflineReadiness");
     }

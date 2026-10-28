@@ -84,6 +84,8 @@ public final class ExperimentValueValidator {
             if (!candidate.hasValueJson()) add(errors, path + ".value_json", "REQUIRED", "需要提供候选值");
         }
         if (candidate.getWeight() < 0) add(errors, path + ".weight", "INVALID_WEIGHT", "权重不能为负数");
+        if (!candidate.getCandidateId().equals(candidate.getCandidateId().strip()))
+            add(errors, path + ".candidate_id", "INVALID_IDENTIFIER", "候选标识不能包含首尾空白");
         if (candidate.hasValueJson()) {
             try {
                 if (c.hasRules()) validateValue(candidate.getValueJson(), c.getRules(), path + ".value_json");
