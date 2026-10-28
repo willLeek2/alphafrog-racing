@@ -539,4 +539,7 @@ message PromptInstructionSource {
   PromptSetVersionRef prompt_set_version = 4;
   string fragment_name = 5;
   PromptExperimentSource experiment = 6;
+  // 非实验的普通默认也保留真实来源，不为它编造实验编号。
+  // 有experiment时来源只保存在experiment.value_source中。
+  ValueSource ordinary_default_source = 7;
 }
