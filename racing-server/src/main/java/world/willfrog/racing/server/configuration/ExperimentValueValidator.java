@@ -1,8 +1,10 @@
 package world.willfrog.racing.server.configuration;
 
-import com.google.protobuf.InvalidProtocolBufferException;
+import com.fasterxml.jackson.core.JsonFactory;
+import com.fasterxml.jackson.core.JsonParser;
 import com.google.protobuf.Value;
 import com.google.protobuf.util.JsonFormat;
+import java.io.IOException;
 import java.time.Instant;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
@@ -26,6 +28,8 @@ import world.willfrog.racing.idl.PromptTargetRef;
 /** 通用值只解释有限类型和直接字段，具体业务用途由调用方解释。 */
 @Component
 public final class ExperimentValueValidator {
+    private static final JsonFactory STRICT_JSON = new JsonFactory();
+
     public void validateDraft(ExperimentConfiguration configuration) {
         validateConfiguration(configuration, false);
     }
@@ -249,11 +253,17 @@ public final class ExperimentValueValidator {
 
     private Value parse(String json, String path) {
         try {
+            // JsonFormat容许部分非JSON正文；先用现有Jackson检查完整的单个JSON值。
+            try (JsonParser parser = STRICT_JSON.createParser(json)) {
+                if (parser.nextToken() == null) throw invalidValue(path, "需要明确JSON值");
+                parser.skipChildren();
+                if (parser.nextToken() != null) throw invalidValue(path, "只能提供一个完整JSON值");
+            }
             Value.Builder builder = Value.newBuilder();
             JsonFormat.parser().merge(json, builder);
             if (builder.getKindCase() == Value.KindCase.KIND_NOT_SET) throw invalidValue(path, "需要明确JSON值");
             return builder.build();
-        } catch (InvalidProtocolBufferException | IllegalArgumentException e) {
+        } catch (IOException | IllegalArgumentException e) {
             throw invalidValue(path, "取值不是合法JSON");
         }
     }
