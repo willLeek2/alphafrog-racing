@@ -5,9 +5,50 @@ package world.willfrog.racing.idl;
 
 import "common.proto";
 import "experiment_value.proto";
+import "prompt.proto";
+import "model_input.proto";
+import "experiment_configuration.proto";
 
 // 业务入口统一鉴权与目标核对，再委托给各自业务服务。
 service RacingService {
   rpc ConfirmRuntimeContext(ConfirmRuntimeContextRequest) returns (ConfirmRuntimeContextReply);
   rpc Evaluate(EvaluateRequest) returns (EvaluateReply);
+  rpc CreatePrompt(CreatePromptRequest) returns (PromptDetailsReply);
+  rpc UpdatePromptMetadata(UpdatePromptMetadataRequest) returns (PromptRecordReply);
+  rpc CreatePromptVersion(CreatePromptVersionRequest) returns (PromptDetailsReply);
+  rpc UpdatePromptVersionAuthorization(UpdatePromptVersionAuthorizationRequest) returns (PromptVersionReply);
+  rpc GetPrompt(GetPromptRequest) returns (PromptDetailsReply);
+  rpc ListPrompts(ListPromptsRequest) returns (ListPromptsReply);
+  rpc ListPromptVersions(ListPromptVersionsRequest) returns (ListPromptVersionsReply);
+  rpc SetPromptDefault(SetPromptDefaultRequest) returns (PromptRecordReply);
+  rpc ReadPromptVersions(ReadPromptVersionsRequest) returns (ReadPromptVersionsReply);
+  rpc CreatePromptSet(CreatePromptSetRequest) returns (PromptSetRecordReply);
+  rpc UpdatePromptSetMetadata(UpdatePromptSetMetadataRequest) returns (PromptSetRecordReply);
+  rpc CreatePromptSetVersion(CreatePromptSetVersionRequest) returns (PromptSetDetailsReply);
+  rpc GetPromptSet(GetPromptSetRequest) returns (PromptSetDetailsReply);
+  rpc ListPromptSets(ListPromptSetsRequest) returns (ListPromptSetsReply);
+  rpc ListPromptSetVersions(ListPromptSetVersionsRequest) returns (ListPromptSetVersionsReply);
+  rpc SetPromptSetDefault(SetPromptSetDefaultRequest) returns (PromptSetDefaultReply);
+  rpc GetPromptSetDefault(GetPromptSetDefaultRequest) returns (PromptSetDefaultReply);
+  rpc ReadPromptSetVersion(ReadPromptSetVersionRequest) returns (PromptSetVersionReply);
+  rpc ResolvePromptSelection(ResolvePromptSelectionRequest) returns (PromptSelectionReply);
+  rpc GetPromptSelection(GetPromptSelectionRequest) returns (PromptSelectionReply);
+  rpc ListPromptReferences(ListPromptReferencesRequest) returns (ListPromptReferencesReply);
+  rpc DeletePromptVersion(DeletePromptVersionRequest) returns (DeletePromptTargetReply);
+  rpc DeletePromptSetVersion(DeletePromptSetVersionRequest) returns (DeletePromptTargetReply);
+  rpc StoreModelInput(StoreModelInputRequest) returns (StoreModelInputReply);
+  rpc GetModelInput(GetModelInputRequest) returns (GetModelInputReply);
+  rpc CreateExperiment(CreateExperimentRequest) returns (ExperimentRecordReply);
+  rpc SaveExperimentDraft(SaveExperimentDraftRequest) returns (ExperimentRecordReply);
+  rpc PublishExperiment(ExperimentMutationRequest) returns (ExperimentRecordReply);
+  rpc StartExperiment(ExperimentMutationRequest) returns (ExperimentRecordReply);
+  rpc PauseExperiment(ExperimentMutationRequest) returns (ExperimentRecordReply);
+  rpc ResumeExperiment(ExperimentMutationRequest) returns (ExperimentRecordReply);
+  rpc EndExperiment(EndExperimentRequest) returns (ExperimentRecordReply);
+  rpc PreviewExperimentDelete(GetExperimentRequest) returns (PreviewExperimentDeleteReply);
+  rpc DeleteExperiment(ExperimentMutationRequest) returns (ExperimentRecordReply);
+  rpc GetExperiment(GetExperimentRequest) returns (ExperimentRecordReply);
+  rpc ListExperiments(ListExperimentsRequest) returns (ListExperimentsReply);
+  rpc ListExperimentVersions(GetExperimentRequest) returns (ListExperimentVersionsReply);
+  rpc ListExperimentOperations(GetExperimentRequest) returns (ListExperimentOperationsReply);
 }

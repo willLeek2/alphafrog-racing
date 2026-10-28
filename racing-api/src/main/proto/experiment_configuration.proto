@@ -1,0 +1,244 @@
+syntax = "proto3";
+
+option java_multiple_files = true;
+package world.willfrog.racing.idl;
+
+import "common.proto";
+import "prompt.proto";
+
+message ExperimentScope {
+  string environment = 1;
+  string scope_instance_id = 2;
+}
+
+enum ExperimentStatus {
+  EXPERIMENT_STATUS_UNSPECIFIED = 0;
+  DRAFT = 1;
+  RUNNING = 2;
+  PAUSED = 3;
+  ENDED = 4;
+}
+
+enum ExperimentRunMode {
+  EXPERIMENT_RUN_MODE_UNSPECIFIED = 0;
+  ONLINE = 1;
+  OFFLINE = 2;
+}
+
+enum ExperimentValueType {
+  EXPERIMENT_VALUE_TYPE_UNSPECIFIED = 0;
+  NUMBER = 1;
+  STRING = 2;
+  JSON_OBJECT = 3;
+}
+
+enum ConfigurationJsonType {
+  CONFIGURATION_JSON_TYPE_UNSPECIFIED = 0;
+  JSON_NUMBER = 1;
+  JSON_STRING = 2;
+  JSON_BOOLEAN = 3;
+  JSON_MAP = 4;
+  JSON_ARRAY = 5;
+  JSON_NULL = 6;
+}
+
+message ConfigurationObjectField {
+  string name = 1;
+  ConfigurationJsonType type = 2;
+}
+
+message ExperimentValueRules {
+  ExperimentValueType type = 1;
+  optional double minimum = 2;
+  optional double maximum = 3;
+  repeated string allowed_values_json = 4;
+  repeated ConfigurationObjectField required_fields = 5;
+}
+
+message ConfigurationCandidate {
+  string candidate_id = 1;
+  optional string value_json = 2;
+  string meaning = 3;
+  int64 weight = 4;
+}
+
+message ExperimentConfiguration {
+  string name = 1;
+  string purpose = 2;
+  string hypothesis = 3;
+  string responsible = 4;
+  ExperimentRunMode run_mode = 5;
+  ConfigurationCandidate candidate_a = 6;
+  ConfigurationCandidate candidate_b = 7;
+  ExperimentValueRules rules = 8;
+  string dataset_id = 9;
+  string dataset_version = 10;
+  repeated PromptTargetRef prompt_references = 11;
+}
+
+message OfflineReadinessEvidence {
+  string dataset_id = 1;
+  string dataset_version = 2;
+  bool ready = 3;
+  string evidence_location = 4;
+  string checked_at = 5;
+  // 保存时由认证身份填写，不接收正文自报身份作为依据。
+  string accepted_from_principal = 6;
+  string accepted_at = 7;
+}
+
+message PublishedExperimentConfiguration {
+  string experiment_id = 1;
+  int64 version = 2;
+  ExperimentConfiguration configuration = 3;
+  int64 total_weight = 4;
+  string published_by = 5;
+  string published_at = 6;
+}
+
+message ExperimentFinalRecord {
+  string value_json = 1;
+  string meaning = 2;
+  string cleanup_release = 3;
+  int64 configuration_version = 4;
+  int64 end_revision = 5;
+  repeated PromptTargetRef prompt_references = 6;
+}
+
+message ExperimentRecord {
+  string experiment_id = 1;
+  ExperimentScope scope = 2;
+  ExperimentStatus status = 3;
+  int64 revision = 4;
+  int64 draft_revision = 5;
+  ExperimentConfiguration draft = 6;
+  PublishedExperimentConfiguration published = 7;
+  ExperimentFinalRecord final_record = 8;
+  string deleted_at = 9;
+  string created_at = 10;
+  string updated_at = 11;
+}
+
+message ExperimentOperation {
+  string operation_id = 1;
+  string experiment_id = 2;
+  string action = 3;
+  string actor = 4;
+  int64 before_revision = 5;
+  int64 after_revision = 6;
+  optional int64 configuration_version = 7;
+  OfflineReadinessEvidence readiness = 8;
+  string operated_at = 9;
+}
+
+message CreateExperimentRequest {
+  RuntimeCallContext context = 1;
+  ExperimentConfiguration draft = 2;
+}
+
+message SaveExperimentDraftRequest {
+  RuntimeCallContext context = 1;
+  string experiment_id = 2;
+  int64 expected_revision = 3;
+  ExperimentConfiguration draft = 4;
+}
+
+// 发布、启动、暂停、恢复和删除分别由统一服务的方法确定动作。
+message ExperimentMutationRequest {
+  RuntimeCallContext context = 1;
+  string experiment_id = 2;
+  int64 expected_revision = 3;
+  OfflineReadinessEvidence readiness = 4;
+}
+
+message EndExperimentRequest {
+  RuntimeCallContext context = 1;
+  string experiment_id = 2;
+  int64 expected_revision = 3;
+  string value_json = 4;
+  string meaning = 5;
+  string cleanup_release = 6;
+  repeated PromptTargetRef prompt_references = 7;
+}
+
+message GetExperimentRequest {
+  RuntimeCallContext context = 1;
+  string experiment_id = 2;
+  int32 offset = 3;
+  int32 limit = 4;
+}
+
+message ListExperimentsRequest {
+  RuntimeCallContext context = 1;
+  repeated ExperimentStatus statuses = 2;
+  bool include_deleted = 3;
+  int32 offset = 4;
+  int32 limit = 5;
+}
+
+message ExperimentRecordReply {
+  oneof result {
+    ExperimentRecord experiment = 1;
+    RacingError error = 2;
+  }
+  RuntimeIdentity actual_target = 3;
+}
+
+message ExperimentRecords {
+  repeated ExperimentRecord experiments = 1;
+}
+
+message ListExperimentsReply {
+  oneof result {
+    ExperimentRecords records = 1;
+    RacingError error = 2;
+  }
+  RuntimeIdentity actual_target = 3;
+}
+
+message ExperimentVersions {
+  repeated PublishedExperimentConfiguration versions = 1;
+}
+
+message ListExperimentVersionsReply {
+  oneof result {
+    ExperimentVersions records = 1;
+    RacingError error = 2;
+  }
+  RuntimeIdentity actual_target = 3;
+}
+
+message ExperimentOperations {
+  repeated ExperimentOperation operations = 1;
+}
+
+message ListExperimentOperationsReply {
+  oneof result {
+    ExperimentOperations records = 1;
+    RacingError error = 2;
+  }
+  RuntimeIdentity actual_target = 3;
+}
+
+message ExperimentDeleteDependency {
+  string object_type = 1;
+  string object_id = 2;
+  string reason = 3;
+}
+
+message ExperimentDeletePreview {
+  string experiment_id = 1;
+  ExperimentStatus status = 2;
+  int64 revision = 3;
+  bool allowed = 4;
+  repeated ExperimentDeleteDependency blocking_objects = 5;
+  string checked_coverage = 6;
+}
+
+message PreviewExperimentDeleteReply {
+  oneof result {
+    ExperimentDeletePreview preview = 1;
+    RacingError error = 2;
+  }
+  RuntimeIdentity actual_target = 3;
+}
