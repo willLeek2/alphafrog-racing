@@ -1,0 +1,89 @@
+syntax = "proto3";
+
+option java_multiple_files = true;
+package world.willfrog.racing.idl;
+
+// 根归属保持不变，执行服务身份由凭据解析，不接受正文自报。
+message RootIdentity {
+  string owner_namespace = 1;
+  string owner_kind = 2;
+  string root_id = 3;
+  string owner_scope_instance_id = 4;
+  string owner_route_tag = 5;
+}
+
+// 创建编号用于授权与记录；路由标签用于本次实际调用。
+message TargetIdentity {
+  string environment = 1;
+  string target_scope_instance_id = 2;
+  string target_route_tag = 3;
+  string target_deployment_id = 4;
+  string expected_target_generation_id = 5;
+}
+
+// 凭据通过调用附件传输，不进入业务上下文或持久运行记录。
+message RuntimeCallContext {
+  TargetIdentity target = 1;
+  RootIdentity root = 2;
+  string current_run_id = 3;
+  string operation_id = 4;
+  string caller_generation_id = 5;
+}
+
+message RuntimeIdentity {
+  string environment = 1;
+  string scope_instance_id = 2;
+  string route_tag = 3;
+  string deployment_id = 4;
+  string actual_target_generation_id = 5;
+}
+
+message FieldViolation {
+  string field = 1;
+  string code = 2;
+  string message = 3;
+}
+
+// code保留各业务稳定原因，包括必须终止模型发送的原因。
+message RacingError {
+  string code = 1;
+  string message = 2;
+  map<string, string> object_locator = 3;
+  map<string, string> details = 4;
+  repeated FieldViolation field_violations = 5;
+}
+
+enum ValueSourceKind {
+  VALUE_SOURCE_UNSPECIFIED = 0;
+  EXPERIMENT = 1;
+  ORDINARY_DEFAULT = 2;
+  ENDED_FIXED = 3;
+}
+
+message ValueSource {
+  ValueSourceKind kind = 1;
+  string configuration_scope_instance_id = 2;
+  // 未发布草稿的普通默认没有实验配置版本，不填写该字段。
+  optional int64 configuration_version = 3;
+  optional string candidate_id = 4;
+  // 业务提供的普通默认来源原样保存，平台不从中推导提示词引用。
+  string business_default_source_json = 5;
+}
+
+message ConfirmRuntimeContextRequest {
+  RuntimeCallContext context = 1;
+  string action = 2;
+}
+
+message ConfirmedRuntimeContext {
+  RuntimeCallContext context = 1;
+  RuntimeIdentity actual_target = 2;
+  string service_principal = 3;
+}
+
+message ConfirmRuntimeContextReply {
+  oneof result {
+    ConfirmedRuntimeContext confirmed = 1;
+    RacingError error = 2;
+  }
+}

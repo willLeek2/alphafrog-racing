@@ -1,0 +1,545 @@
+syntax = "proto3";
+
+option java_multiple_files = true;
+package world.willfrog.racing.idl;
+
+import "common.proto";
+import "google/protobuf/timestamp.proto";
+
+// 资源所属范围和读取授权均使用泳道创建编号，不以路由标签或根编号代替。
+message PromptScope {
+  string environment = 1;
+  string scope_instance_id = 2;
+}
+
+message PromptLocator {
+  PromptScope scope = 1;
+  string prompt_id = 2;
+}
+
+message PromptSetLocator {
+  PromptScope scope = 1;
+  string prompt_set_id = 2;
+}
+
+// version必须为明确的已保存版本；0不表示最新或普通默认。
+message PromptVersionRef {
+  PromptScope scope = 1;
+  string prompt_id = 2;
+  int64 version = 3;
+}
+
+message PromptSetVersionRef {
+  PromptScope scope = 1;
+  string prompt_set_id = 2;
+  int64 version = 3;
+}
+
+message PromptTargetRef {
+  oneof target {
+    PromptVersionRef prompt_version = 1;
+    PromptSetVersionRef prompt_set_version = 2;
+  }
+}
+
+message PromptPageRequest {
+  // 页码从1开始；缺省值及页大小上限由服务统一处理。
+  int32 page_number = 1;
+  int32 page_size = 2;
+}
+
+message PromptPageInfo {
+  int32 page_number = 1;
+  int32 page_size = 2;
+  int64 total_count = 3;
+}
+
+message PromptCreationInfo {
+  string principal = 1;
+  google.protobuf.Timestamp created_at = 2;
+}
+
+message PromptModificationInfo {
+  string principal = 1;
+  google.protobuf.Timestamp modified_at = 2;
+  string action = 3;
+}
+
+enum PromptBodyType {
+  PROMPT_BODY_TYPE_UNSPECIFIED = 0;
+  PROMPT_BODY_FIXED = 1;
+  PROMPT_BODY_TEMPLATE = 2;
+}
+
+message PromptVariableDeclaration {
+  string name = 1;
+  bool required = 2;
+  bool allow_empty = 3;
+  // 可选变量缺失时使用该版默认值；空串与未声明默认值分别表达。
+  optional string default_value = 4;
+}
+
+// 正文仍保持不变，授权可以按当前修订调整；空清单不代表公开读取。
+message PromptVersionAuthorization {
+  repeated PromptScope readable_scopes = 1;
+  int64 revision = 2;
+}
+
+message PromptImportOrigin {
+  string source_name = 1;
+  string source_revision = 2;
+  string source_sha256 = 3;
+}
+
+message PromptVersionInput {
+  string body = 1;
+  PromptBodyType body_type = 2;
+  repeated PromptVariableDeclaration variables = 3;
+  string purpose = 4;
+  repeated PromptScope readable_scopes = 5;
+  // 导入来源用于复核及识别同一导入重发，不由通用operation_id代替。
+  PromptImportOrigin import_origin = 6;
+}
+
+message PromptRecord {
+  PromptLocator locator = 1;
+  string name = 2;
+  int64 revision = 3;
+  optional int64 default_version = 4;
+  PromptCreationInfo creation = 5;
+  PromptModificationInfo last_modification = 6;
+}
+
+message PromptVersion {
+  PromptVersionRef reference = 1;
+  string body = 2;
+  PromptBodyType body_type = 3;
+  repeated PromptVariableDeclaration variables = 4;
+  string purpose = 5;
+  // 此项是当前授权；其余正文、变量、用途和创建资料随该版固定。
+  PromptVersionAuthorization authorization = 6;
+  int64 utf8_length = 7;
+  string sha256 = 8;
+  PromptCreationInfo creation = 9;
+  PromptImportOrigin import_origin = 10;
+}
+
+message PromptDetails {
+  PromptRecord record = 1;
+  // 仅在请求了明确版本或创建正文版本时返回。
+  PromptVersion version = 2;
+}
+
+message CreatePromptRequest {
+  RuntimeCallContext context = 1;
+  PromptScope scope = 2;
+  string name = 3;
+  PromptVersionInput initial_version = 4;
+}
+
+message UpdatePromptMetadataRequest {
+  RuntimeCallContext context = 1;
+  PromptLocator prompt = 2;
+  int64 expected_revision = 3;
+  string name = 4;
+}
+
+message CreatePromptVersionRequest {
+  RuntimeCallContext context = 1;
+  PromptLocator prompt = 2;
+  int64 expected_revision = 3;
+  PromptVersionInput content = 4;
+}
+
+message UpdatePromptVersionAuthorizationRequest {
+  RuntimeCallContext context = 1;
+  PromptVersionRef version = 2;
+  int64 expected_authorization_revision = 3;
+  repeated PromptScope readable_scopes = 4;
+}
+
+message GetPromptRequest {
+  RuntimeCallContext context = 1;
+  PromptLocator prompt = 2;
+  // 不填写时只查询命名记录，不隐式读取当前默认正文。
+  optional int64 version = 3;
+}
+
+message ListPromptsRequest {
+  RuntimeCallContext context = 1;
+  PromptScope scope = 2;
+  string name_filter = 3;
+  string purpose_filter = 4;
+  PromptPageRequest page = 5;
+}
+
+message ListPromptVersionsRequest {
+  RuntimeCallContext context = 1;
+  PromptLocator prompt = 2;
+  PromptPageRequest page = 3;
+}
+
+message SetPromptDefaultRequest {
+  RuntimeCallContext context = 1;
+  PromptLocator prompt = 2;
+  int64 expected_revision = 3;
+  // 目标必须属于上面的命名提示词。
+  int64 version = 4;
+}
+
+message PromptVersionRead {
+  PromptVersionRef version = 1;
+  string expected_purpose = 2;
+}
+
+message ReadPromptVersionsRequest {
+  RuntimeCallContext context = 1;
+  repeated PromptVersionRead versions = 2;
+}
+
+message PromptVersionList {
+  repeated PromptVersion versions = 1;
+  PromptPageInfo page = 2;
+}
+
+message PromptRecordList {
+  repeated PromptRecord prompts = 1;
+  PromptPageInfo page = 2;
+}
+
+message PromptDetailsReply {
+  oneof result {
+    PromptDetails prompt = 1;
+    RacingError error = 2;
+  }
+  RuntimeIdentity actual_target = 3;
+}
+
+message PromptRecordReply {
+  oneof result {
+    PromptRecord prompt = 1;
+    RacingError error = 2;
+  }
+  RuntimeIdentity actual_target = 3;
+}
+
+message PromptVersionReply {
+  oneof result {
+    PromptVersion version = 1;
+    RacingError error = 2;
+  }
+  RuntimeIdentity actual_target = 3;
+}
+
+message ListPromptsReply {
+  oneof result {
+    PromptRecordList page = 1;
+    RacingError error = 2;
+  }
+  RuntimeIdentity actual_target = 3;
+}
+
+message ListPromptVersionsReply {
+  oneof result {
+    PromptVersionList page = 1;
+    RacingError error = 2;
+  }
+  RuntimeIdentity actual_target = 3;
+}
+
+message ReadPromptVersionsReply {
+  oneof result {
+    // 顺序与请求一致；任一项用途或授权检查失败时返回错误，不改选其他版。
+    PromptVersionList versions = 1;
+    RacingError error = 2;
+  }
+  RuntimeIdentity actual_target = 3;
+}
+
+message PromptSetMember {
+  string fragment_name = 1;
+  PromptVersionRef version = 2;
+  string expected_purpose = 3;
+}
+
+message PromptSetRecord {
+  PromptSetLocator locator = 1;
+  string name = 2;
+  int64 revision = 3;
+  PromptCreationInfo creation = 4;
+  PromptModificationInfo last_modification = 5;
+}
+
+message PromptSetVersion {
+  PromptSetVersionRef reference = 1;
+  repeated PromptSetMember members = 2;
+  PromptCreationInfo creation = 3;
+}
+
+message PromptSetDetails {
+  PromptSetRecord record = 1;
+  PromptSetVersion version = 2;
+}
+
+message PromptSetDefault {
+  PromptScope scope = 1;
+  string business_name = 2;
+  PromptSetVersionRef version = 3;
+  int64 revision = 4;
+  PromptModificationInfo last_modification = 5;
+}
+
+message CreatePromptSetRequest {
+  RuntimeCallContext context = 1;
+  PromptScope scope = 2;
+  string name = 3;
+}
+
+message UpdatePromptSetMetadataRequest {
+  RuntimeCallContext context = 1;
+  PromptSetLocator prompt_set = 2;
+  int64 expected_revision = 3;
+  string name = 4;
+}
+
+message CreatePromptSetVersionRequest {
+  RuntimeCallContext context = 1;
+  PromptSetLocator prompt_set = 2;
+  int64 expected_revision = 3;
+  repeated PromptSetMember members = 4;
+}
+
+message GetPromptSetRequest {
+  RuntimeCallContext context = 1;
+  PromptSetLocator prompt_set = 2;
+  optional int64 version = 3;
+}
+
+message ListPromptSetsRequest {
+  RuntimeCallContext context = 1;
+  PromptScope scope = 2;
+  string name_filter = 3;
+  PromptPageRequest page = 4;
+}
+
+message ListPromptSetVersionsRequest {
+  RuntimeCallContext context = 1;
+  PromptSetLocator prompt_set = 2;
+  PromptPageRequest page = 3;
+}
+
+message SetPromptSetDefaultRequest {
+  RuntimeCallContext context = 1;
+  PromptScope scope = 2;
+  string business_name = 3;
+  // 首次创建默认记录时为0，后续使用已读取的记录修订。
+  int64 expected_revision = 4;
+  PromptSetVersionRef version = 5;
+}
+
+message GetPromptSetDefaultRequest {
+  RuntimeCallContext context = 1;
+  PromptScope scope = 2;
+  string business_name = 3;
+}
+
+message ReadPromptSetVersionRequest {
+  RuntimeCallContext context = 1;
+  PromptSetVersionRef version = 2;
+}
+
+message PromptSetRecordList {
+  repeated PromptSetRecord prompt_sets = 1;
+  PromptPageInfo page = 2;
+}
+
+message PromptSetVersionList {
+  repeated PromptSetVersion versions = 1;
+  PromptPageInfo page = 2;
+}
+
+message PromptSetRecordReply {
+  oneof result {
+    PromptSetRecord prompt_set = 1;
+    RacingError error = 2;
+  }
+  RuntimeIdentity actual_target = 3;
+}
+
+message PromptSetDetailsReply {
+  oneof result {
+    PromptSetDetails prompt_set = 1;
+    RacingError error = 2;
+  }
+  RuntimeIdentity actual_target = 3;
+}
+
+message PromptSetVersionReply {
+  oneof result {
+    PromptSetVersion version = 1;
+    RacingError error = 2;
+  }
+  RuntimeIdentity actual_target = 3;
+}
+
+message PromptSetDefaultReply {
+  oneof result {
+    PromptSetDefault default_set = 1;
+    RacingError error = 2;
+  }
+  RuntimeIdentity actual_target = 3;
+}
+
+message ListPromptSetsReply {
+  oneof result {
+    PromptSetRecordList page = 1;
+    RacingError error = 2;
+  }
+  RuntimeIdentity actual_target = 3;
+}
+
+message ListPromptSetVersionsReply {
+  oneof result {
+    PromptSetVersionList page = 1;
+    RacingError error = 2;
+  }
+  RuntimeIdentity actual_target = 3;
+}
+
+message PromptDefaultChoice {
+  PromptLocator prompt = 1;
+  string expected_purpose = 2;
+}
+
+message PromptSetDefaultChoice {
+  PromptScope scope = 1;
+  string business_name = 2;
+}
+
+message PromptSelectionOrigin {
+  PromptScope source_scope = 1;
+  // 记录实际读取的默认指针修订，而非正文版本号。
+  int64 default_revision = 2;
+  string business_name = 3;
+  ValueSource value_source = 4;
+}
+
+// 根选择也是跨服务的集合绑定；公共上下文不反向依赖本消息。
+message PromptSelection {
+  string selection_id = 1;
+  RootIdentity root = 2;
+  TargetIdentity target = 3;
+  string selection_key = 4;
+  PromptTargetRef selected_target = 5;
+  PromptSelectionOrigin origin = 6;
+  google.protobuf.Timestamp confirmed_at = 7;
+}
+
+message ResolvePromptSelectionRequest {
+  RuntimeCallContext context = 1;
+  // 同一根与同一业务位置保持此键稳定，不按模型调用次数生成。
+  string selection_key = 2;
+  oneof ordinary_default {
+    PromptDefaultChoice prompt_default = 3;
+    PromptSetDefaultChoice prompt_set_default = 4;
+  }
+}
+
+message GetPromptSelectionRequest {
+  RuntimeCallContext context = 1;
+  oneof locator {
+    string selection_id = 2;
+    string selection_key = 3;
+  }
+}
+
+message PromptSelectionReply {
+  oneof result {
+    PromptSelection selection = 1;
+    RacingError error = 2;
+  }
+  RuntimeIdentity actual_target = 3;
+}
+
+message PromptReferenceOwner {
+  PromptScope scope = 1;
+  string owner_type = 2;
+  string owner_id = 3;
+  int64 revision = 4;
+}
+
+// 供同一事务中的业务服务交换明确清单，不作为独立远程写接口。
+message PromptReferenceReplacement {
+  PromptReferenceOwner owner = 1;
+  repeated PromptTargetRef targets = 2;
+}
+
+message PromptReference {
+  string reference_id = 1;
+  PromptReferenceOwner owner = 2;
+  PromptTargetRef target = 3;
+  google.protobuf.Timestamp registered_at = 4;
+}
+
+message ListPromptReferencesRequest {
+  RuntimeCallContext context = 1;
+  PromptTargetRef target = 2;
+  PromptPageRequest page = 3;
+}
+
+message PromptReferenceList {
+  repeated PromptReference references = 1;
+  PromptPageInfo page = 2;
+}
+
+message ListPromptReferencesReply {
+  oneof result {
+    PromptReferenceList page = 1;
+    RacingError error = 2;
+  }
+  RuntimeIdentity actual_target = 3;
+}
+
+message DeletePromptVersionRequest {
+  RuntimeCallContext context = 1;
+  PromptVersionRef version = 2;
+}
+
+message DeletePromptSetVersionRequest {
+  RuntimeCallContext context = 1;
+  PromptSetVersionRef version = 2;
+}
+
+message PromptDeletionResult {
+  PromptTargetRef deleted_target = 1;
+}
+
+message DeletePromptTargetReply {
+  oneof result {
+    PromptDeletionResult deleted = 1;
+    RacingError error = 2;
+  }
+  // 存在引用的拒绝可返回首个分页，其余使用引用列表接口查询。
+  PromptReferenceList blocking_references = 3;
+  RuntimeIdentity actual_target = 4;
+}
+
+message PromptExperimentSource {
+  string experiment_id = 1;
+  // 结束固定值没有分配记录；不得为关联输入而编造编号。
+  optional string assignment_id = 2;
+  ValueSource value_source = 3;
+}
+
+// 仅描述本次输入实际使用的指令，不把整套集合成员一并计作来源。
+message PromptInstructionSource {
+  PromptVersionRef version = 1;
+  string selection_id = 2;
+  string selection_key = 3;
+  PromptSetVersionRef prompt_set_version = 4;
+  string fragment_name = 5;
+  PromptExperimentSource experiment = 6;
+  // 非实验的普通默认也保留真实来源，不为它编造实验编号。
+  // 有experiment时来源只保存在experiment.value_source中。
+  ValueSource ordinary_default_source = 7;
+}

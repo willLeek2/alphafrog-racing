@@ -1,0 +1,28 @@
+syntax = "proto3";
+
+option java_multiple_files = true;
+package world.willfrog.racing.idl;
+
+import "common.proto";
+
+message EvaluateRequest {
+  RuntimeCallContext context = 1;
+  string experiment_id = 2;
+  string ordinary_default_json = 3;
+  string ordinary_default_source_json = 4;
+}
+
+message EvaluationValue {
+  string value_json = 1;
+  // 已结束且无原记录时不新建分配，该字段为空。
+  string assignment_id = 2;
+  ValueSource source = 3;
+  RuntimeIdentity actual_target = 4;
+}
+
+message EvaluateReply {
+  oneof result {
+    EvaluationValue value = 1;
+    RacingError error = 2;
+  }
+}
