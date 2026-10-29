@@ -10,6 +10,7 @@ import world.willfrog.racing.server.prompt.PromptBusinessException;
 import org.springframework.dao.DataAccessException;
 import org.springframework.transaction.TransactionException;
 import world.willfrog.racing.server.evaluation.ExperimentEvaluationService;
+import world.willfrog.racing.server.input.ModelInputService;
 import world.willfrog.racing.idl.ConfirmRuntimeContextReply;
 import world.willfrog.racing.idl.ConfirmRuntimeContextRequest;
 import world.willfrog.racing.idl.DubboRacingServiceTriple.RacingServiceImplBase;
@@ -24,13 +25,41 @@ public final class RacingServiceImpl extends RacingServiceImplBase {
 
     private final ObjectProvider<ExperimentEvaluationService> evaluations;
     private final ObjectProvider<ExperimentConfigurationService> configurations;
+    private final ObjectProvider<ModelInputService> modelInputs;
 
     public RacingServiceImpl(ServiceAuthorization authorization,
             ObjectProvider<ExperimentEvaluationService> evaluations,
-            ObjectProvider<ExperimentConfigurationService> configurations) {
+            ObjectProvider<ExperimentConfigurationService> configurations,
+            ObjectProvider<ModelInputService> modelInputs) {
         this.authorization = authorization;
         this.evaluations = evaluations;
         this.configurations = configurations;
+        this.modelInputs = modelInputs;
+    }
+
+    /** 输入服务的事务代理提交成功后才会返回，入口据此封装保存回执。 */
+    @Override
+    public StoreModelInputReply storeModelInput(StoreModelInputRequest request) {
+        var reply = StoreModelInputReply.newBuilder();
+        try {
+            if (request == null || !request.hasContext()) {
+                throw RacingServiceException.failure("INVALID_ARGUMENT", "模型输入保存请求缺少运行上下文");
+            }
+            var call = authorization.authorize("StoreModelInput", request.getContext());
+            reply.setActualTarget(call.actualTarget());
+            var service = modelInputs.getIfAvailable();
+            if (service == null) {
+                throw RacingServiceException.failure("SCOPE_UNAVAILABLE", "模型输入保存服务尚未配置");
+            }
+            return reply.setStored(service.store(call, request)).build();
+        } catch (RacingServiceException failure) {
+            return reply.setError(failure.error()).build();
+        } catch (PromptBusinessException failure) {
+            return reply.setError(failure.error()).build();
+        } catch (DataAccessException | TransactionException failure) {
+            return reply.setError(RacingError.newBuilder().setCode("INPUT_STORE_UNCONFIRMED")
+                    .setMessage("模型输入尚未确认保存，请使用原尝试编号重试")).build();
+        }
     }
 
     @Override
