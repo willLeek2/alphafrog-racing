@@ -90,6 +90,21 @@ public final class ModelInputContentValidator {
         Map<String, Position> out = new LinkedHashMap<>();
         String prefix = body.has("messages") ? "/messages" : "/input/messages";
         JsonNode messages = body.at(prefix);
+        if (!body.has("messages") && !body.has("input") && body.has("query")) {
+            text(body.get("query"), "input_json.query");
+            if (body.has("tools") || body.has("response_format")) {
+                throw invalid("input_json", "INVALID_QUERY_STRUCTURE", "搜索输入不能混用消息协议结构");
+            }
+            // 单查询沿用消息位置联合字段，序号零指向原始query字段。
+            out.put("/query", new Position(ModelInputSourceBinding.LocationCase.MESSAGE, 0, "",
+                    false, null, "input_json.query"));
+            JsonNode schema = body.get("outputSchema");
+            if (schema != null && !schema.isNull()) {
+                structure(schema, "/outputSchema", ModelInputSourceBinding.LocationCase.OUTPUT_STRUCTURE,
+                        "", "input_json.outputSchema", out);
+            }
+            return out;
+        }
         if (!messages.isArray() || messages.isEmpty()) {
             throw invalid("input_json.messages", "INVALID_MESSAGES", "模型输入需要非空消息列表");
         }
