@@ -1,0 +1,82 @@
+syntax = "proto3";
+
+option java_multiple_files = true;
+package world.willfrog.racing.idl;
+
+import "common.proto";
+
+// 结果查询使用开发者授权和原实例编号。它回答实际使用和调用，不代替分配历史，也不返回完整模型输入。
+message QueryExperimentResultRequest {
+  string environment = 1;
+  string scope_instance_id = 2;
+  // 空字符串表示不按实验编号筛选。
+  string experiment_id = 3;
+  // 未设置表示不按配置版本筛选。设置时必须大于 0。
+  optional int64 configuration_version = 4;
+  // 空字符串表示不按实际采用值筛选。
+  string adopted_value_json = 5;
+  int32 offset = 6;
+  // 0 表示默认 50 条，最大 200 条。
+  int32 limit = 7;
+}
+
+message ExperimentResultRow {
+  // 已结束且没有原分配时留空。
+  string assignment_id = 1;
+  string environment = 2;
+  string scope_instance_id = 3;
+  string experiment_id = 4;
+  string owner_namespace = 5;
+  string owner_kind = 6;
+  string owner_scope_instance_id = 7;
+  string root_id = 8;
+  string source_kind = 9;
+  optional int64 configuration_version = 10;
+  string adopted_value_json = 11;
+  string root_run_id = 12;
+  string call_id = 13;
+  string recorded_at = 14;
+  // 业务未提供时留空。
+  string content_checksum = 15;
+  // 业务未提供时留空。
+  string result_json = 16;
+}
+
+// 顺序为 recorded_at、call_id。
+message ExperimentResultPage {
+  repeated ExperimentResultRow rows = 1;
+}
+
+message QueryExperimentResultReply {
+  oneof result {
+    ExperimentResultPage page = 1;
+    RacingError error = 2;
+  }
+}
+
+// 定位一条结果的字段尚未写入。这一笔只携带授权所需的原环境和原实例。
+message SupplementExperimentResultRequest {
+  string environment = 1;
+  string scope_instance_id = 2;
+}
+
+message CorrectExperimentResultRequest {
+  string environment = 1;
+  string scope_instance_id = 2;
+}
+
+message ExperimentResultAccepted {}
+
+message SupplementExperimentResultReply {
+  oneof result {
+    ExperimentResultAccepted accepted = 1;
+    RacingError error = 2;
+  }
+}
+
+message CorrectExperimentResultReply {
+  oneof result {
+    ExperimentResultAccepted accepted = 1;
+    RacingError error = 2;
+  }
+}

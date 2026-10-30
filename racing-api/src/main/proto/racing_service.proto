@@ -9,6 +9,7 @@ import "prompt.proto";
 import "model_input.proto";
 import "experiment_configuration.proto";
 import "experiment_history.proto";
+import "experiment_result.proto";
 
 // 业务入口统一鉴权与目标核对，再委托给各自业务服务。
 service RacingService {
@@ -55,4 +56,7 @@ service RacingService {
   rpc ReadAssignmentHistory(ReadAssignmentHistoryRequest) returns (ReadAssignmentHistoryReply);
   rpc ReadPromptSetVersionHistory(ReadPromptSetVersionHistoryRequest) returns (ReadPromptSetVersionHistoryReply);
   rpc ReadPromptVersionHistory(ReadPromptVersionHistoryRequest) returns (ReadPromptVersionHistoryReply);
+  rpc QueryExperimentResult(QueryExperimentResultRequest) returns (QueryExperimentResultReply);
+  rpc SupplementExperimentResult(SupplementExperimentResultRequest) returns (SupplementExperimentResultReply);
+  rpc CorrectExperimentResult(CorrectExperimentResultRequest) returns (CorrectExperimentResultReply);
 }
