@@ -1,6 +1,16 @@
 spring:
   application:
     name: racing-server
+  datasource:
+    url: ${RACING_DATABASE_URL}
+    username: ${RACING_DATABASE_USERNAME}
+    password: ${RACING_DATABASE_PASSWORD}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      transaction-isolation: TRANSACTION_READ_COMMITTED
+  sql:
+    init:
+      mode: never
   main:
     web-application-type: none
 
