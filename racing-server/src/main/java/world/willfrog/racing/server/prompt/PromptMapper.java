@@ -91,12 +91,12 @@ public interface PromptMapper {
     long countSet(Map<String, Object> parameters);
 
     @Select("""
-        <script>SELECT environment,scope_instance_id,set_id::text AS id,version,created_by,created_at,members_json::text FROM racing_prompt_set_version WHERE environment=#{environment} AND scope_instance_id=#{scope} AND set_id=CAST(#{id} AS UUID) AND version=#{version}<if test="lock"> FOR UPDATE</if></script>
+        <script>SELECT environment,scope_instance_id,set_id::text AS id,version,created_by,created_at,members_json::text,base_version_json::text,removed_fragment_names_json::text FROM racing_prompt_set_version WHERE environment=#{environment} AND scope_instance_id=#{scope} AND set_id=CAST(#{id} AS UUID) AND version=#{version}<if test="lock"> FOR UPDATE</if></script>
         """)
     Map<String, Object> getSetVersion(Map<String, Object> parameters);
 
     @Select("""
-        SELECT environment,scope_instance_id,set_id::text AS id,version,created_by,created_at,members_json::text FROM racing_prompt_set_version WHERE environment=#{environment} AND scope_instance_id=#{scope} AND set_id=CAST(#{id} AS UUID) ORDER BY version DESC LIMIT #{limit} OFFSET #{offset}
+        SELECT environment,scope_instance_id,set_id::text AS id,version,created_by,created_at,members_json::text,base_version_json::text,removed_fragment_names_json::text FROM racing_prompt_set_version WHERE environment=#{environment} AND scope_instance_id=#{scope} AND set_id=CAST(#{id} AS UUID) ORDER BY version DESC LIMIT #{limit} OFFSET #{offset}
         """)
     List<Map<String, Object>> listSetVersions(Map<String, Object> parameters);
 
@@ -121,7 +121,7 @@ public interface PromptMapper {
     int updateAuthorization(Map<String, Object> parameters);
 
     @Insert("""
-        INSERT INTO racing_prompt_set_version(environment,scope_instance_id,set_id,version,members_json,created_by) VALUES(#{environment},#{scope},CAST(#{id} AS UUID),#{version},CAST(#{members} AS JSONB),#{principal})
+        INSERT INTO racing_prompt_set_version(environment,scope_instance_id,set_id,version,members_json,base_version_json,removed_fragment_names_json,created_by) VALUES(#{environment},#{scope},CAST(#{id} AS UUID),#{version},CAST(#{members} AS JSONB),CAST(#{base} AS JSONB),CAST(#{removed} AS JSONB),#{principal})
         """)
     int insertSetVersion(Map<String, Object> parameters);
 

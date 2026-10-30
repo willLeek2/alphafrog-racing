@@ -18,9 +18,12 @@ public class DefaultPromptReferenceService implements PromptReferenceService {
 
     private final PromptReadService reads;
 
-    public DefaultPromptReferenceService(PromptRepository repository, PromptReadService reads) {
+    private final PromptSetVersionResolver sets;
+
+    public DefaultPromptReferenceService(PromptRepository repository, PromptReadService reads, PromptSetVersionResolver sets) {
         this.repository = repository;
         this.reads = reads;
+        this.sets = sets;
     }
 
     @Override
@@ -79,9 +82,7 @@ public class DefaultPromptReferenceService implements PromptReferenceService {
         read(call, ref.getScope());
         var value = repository.setVersion(ref, true);
         require(value != null, "PROMPT_SET_VERSION_NOT_FOUND", "指定集合版本不存在");
-        for (var member : value.getMembersList()) {
-            reads.getVersion(call, member.getVersion(), member.getExpectedPurpose());
-        }
+        sets.resolveDefinition(call, value);
     }
 
     @Transactional(readOnly = true)

@@ -827,11 +827,16 @@ public final class RacingServiceImpl extends RacingServiceImplBase {
                 throw RacingServiceException.failure("INVALID_ARGUMENT", "提示词请求缺少运行上下文");
             }
             var call = authorization.authorize("ResolvePromptSelection", request.getContext());
+            if (!request.getExperimentId().isEmpty()) {
+                authorization.authorize("Evaluate", request.getContext());
+            }
             reply.setActualTarget(call.actualTarget());
             var service = promptSelections.getIfAvailable();
             if (service == null) throw RacingServiceException.failure("SCOPE_UNAVAILABLE", "提示词服务尚未配置");
             return reply.setSelection(service.resolve(call, request)).build();
         } catch (RacingServiceException failure) {
+            return reply.setError(failure.error()).build();
+        } catch (ExperimentConfigurationException failure) {
             return reply.setError(failure.error()).build();
         } catch (PromptBusinessException failure) {
             return reply.setError(failure.error()).build();
