@@ -210,9 +210,6 @@ public final class ExperimentUsageService {
         if (!facts.safetyDefault() && facts.safetyDefaultReason() != null) {
             throw invalid("未使用安全默认时不能填写原因");
         }
-        if (facts.safetyDefault() && !differs) {
-            throw invalid("安全默认必须采用与原值不同的备用值，并保留原分配");
-        }
         return new Snapshot(facts, expected, differs);
     }
 
@@ -283,7 +280,7 @@ public final class ExperimentUsageService {
                 request.getAdoptedValueJson(), adopted, blankToNull(request.getDifferenceReason()),
                 request.getSafetyDefault(), blankToNull(request.getSafetyDefaultReason()),
                 blankToNull(request.getContentChecksum()), check, checkReason, resultJson, result,
-                micros(request.getOccurredAt()), request.getOccurredAt(), currentRunId, callId);
+                micros(request.getOccurredAt()), currentRunId, callId);
     }
 
     private static JsonNode parseValue(String text) {
@@ -348,6 +345,7 @@ public final class ExperimentUsageService {
         return left.equals(right);
     }
 
+    /** 比较和写库都使用截断后的时刻。数据库对更细的秒小数会舍入，直接写入原文本会和这里差一微秒。 */
     private static Instant micros(String text) {
         try {
             return OffsetDateTime.parse(text).toInstant().truncatedTo(ChronoUnit.MICROS);
@@ -404,7 +402,7 @@ public final class ExperimentUsageService {
     private record RequestFacts(String principal, ExperimentBucket.EvaluationKey key, String attemptId,
             String assignmentId, String adoptedValueJson, JsonNode adoptedValue, String differenceReason,
             boolean safetyDefault, String safetyDefaultReason, String contentChecksum, Boolean contentCheckPassed,
-            String contentCheckReason, String resultJson, JsonNode result, Instant occurredAt, String occurredText,
+            String contentCheckReason, String resultJson, JsonNode result, Instant occurredAt,
             String currentRunId, String callId) {
     }
 
@@ -420,7 +418,7 @@ public final class ExperimentUsageService {
                     facts.attemptId(), expected.assignmentId(), expected.sourceKind(), expected.configurationVersion(),
                     facts.adoptedValueJson(), differs, facts.differenceReason(), facts.safetyDefault(),
                     facts.safetyDefaultReason(), facts.contentChecksum(), facts.contentCheckPassed(),
-                    facts.contentCheckReason(), facts.occurredText());
+                    facts.contentCheckReason(), facts.occurredAt().toString());
         }
     }
 }
