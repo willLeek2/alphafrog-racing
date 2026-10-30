@@ -54,7 +54,7 @@ public class PromptSourceService {
                     selection = selections.getStoredForSource(call, request.build());
                     selected.put("id:" + selection.getSelectionId(), selection);
                     selected.put("key:" + selection.getSelectionKey(), selection);
-                    // 即使本次使用实验正文，原根绑定的集合也必须仍可读取。
+                    // 本次正文始终核对原根选择的实际集合成员。
                     PromptTargetRef target = selection.getSelectedTarget();
                     if (target.hasPromptVersion()) {
                         versions.computeIfAbsent(target.getPromptVersion(), ref -> reads.getVersion(call, ref, ""));
@@ -67,6 +67,10 @@ public class PromptSourceService {
                 if (!source.getSelectionKey().isEmpty()) {
                     require(source.getSelectionKey().equals(selection.getSelectionKey()), "PROMPT_SOURCE_MISMATCH", "输入来源选择键与持久选择不一致");
                 }
+            }
+            if (selection != null && selection.getSelectedTarget().hasPromptSetVersion()) {
+                require(source.hasPromptSetVersion(), "PROMPT_SOURCE_MISMATCH", "根已选择集合，来源必须提供该集合及片段");
+                text(source.getFragmentName(), "fragment_name");
             }
             boolean experiment = source.hasExperiment();
             if (source.hasPromptSetVersion()) {
@@ -83,8 +87,16 @@ public class PromptSourceService {
                                             .findFirst()
                                             .orElseThrow(() -> error("PROMPT_SOURCE_MISMATCH", "集合中没有该片段"));
                 require(member.getExpectedPurpose().equals(actual.getPurpose()), "PROMPT_PURPOSE_MISMATCH", "提示词版本用途与集合要求不一致");
-                if (!experiment) {
-                    require(member.getVersion().equals(source.getVersion()), "PROMPT_SOURCE_MISMATCH", "普通来源版本与集合成员不一致");
+                require(member.getVersion().equals(source.getVersion()), "PROMPT_SOURCE_MISMATCH", "来源正文版本与实际集合成员不一致");
+                if (selection.getOrigin().hasExperiment()) {
+                    require(experiment && source.getExperiment().equals(selection.getOrigin().getExperiment())
+                                    && !source.hasOrdinaryDefaultSource(),
+                            "PROMPT_SOURCE_MISMATCH", "集合实验来源与原根选择不一致");
+                } else {
+                    require(!experiment && selection.getOrigin().hasValueSource()
+                                    && source.hasOrdinaryDefaultSource()
+                                    && source.getOrdinaryDefaultSource().equals(selection.getOrigin().getValueSource()),
+                            "PROMPT_SOURCE_MISMATCH", "集合普通默认来源与原根选择不一致");
                 }
             } else {
                 require(source.getFragmentName().isEmpty(), "PROMPT_SOURCE_MISMATCH", "片段来源缺少集合版本");

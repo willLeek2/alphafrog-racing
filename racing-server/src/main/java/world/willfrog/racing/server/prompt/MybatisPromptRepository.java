@@ -1,7 +1,9 @@
 package world.willfrog.racing.server.prompt;
 
 import com.google.protobuf.Message;
+import com.google.protobuf.ListValue;
 import com.google.protobuf.Timestamp;
+import com.google.protobuf.Value;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.time.OffsetDateTime;
@@ -91,6 +93,14 @@ public class MybatisPromptRepository implements PromptRepository {
                      .collect(Collectors.joining(",", "[", "]"));
     }
 
+    private static String stringArray(List<String> values) {
+        var array = ListValue.newBuilder();
+        for (String value : values) {
+            array.addValues(Value.newBuilder().setStringValue(value));
+        }
+        return PromptSupport.json(array.build());
+    }
+
     private static void changed(int rows) {
         PromptSupport.require(rows == 1, "REVISION_CONFLICT", "内容已变化，请刷新后重新提交");
     }
@@ -150,10 +160,14 @@ public class MybatisPromptRepository implements PromptRepository {
         if (m == null) {
             return null;
         }
-        return PromptSupport.parse("{\"members\":" + s(m, "members_json") + "}", PromptSetVersion.newBuilder())
-                            .setReference(PromptSetVersionRef.newBuilder().setScope(scope(m)).setPromptSetId(s(m, "id")).setVersion(n(m, "version")))
-                            .setCreation(creation(m))
-                            .build();
+        var version = PromptSupport.parse("{\"members\":" + s(m, "members_json")
+                + ",\"removedFragmentNames\":" + s(m, "removed_fragment_names_json") + "}", PromptSetVersion.newBuilder())
+                                   .setReference(PromptSetVersionRef.newBuilder().setScope(scope(m)).setPromptSetId(s(m, "id")).setVersion(n(m, "version")))
+                                   .setCreation(creation(m));
+        if (m.get("base_version_json") != null) {
+            version.setBaseVersion(PromptSupport.parse(s(m, "base_version_json"), PromptSetVersionRef.newBuilder()));
+        }
+        return version.build();
     }
 
     private static Map<String, Object> record(PromptRecord v) {
@@ -284,6 +298,8 @@ public class MybatisPromptRepository implements PromptRepository {
         var k = v.getReference();
         var m = versionKey(k.getScope(), k.getPromptSetId(), k.getVersion());
         m.put("members", array(v.getMembersList()));
+        m.put("base", v.hasBaseVersion() ? PromptSupport.json(v.getBaseVersion()) : null);
+        m.put("removed", stringArray(v.getRemovedFragmentNamesList()));
         m.put("principal", v.getCreation().getPrincipal());
         mapper.insertSetVersion(m);
     }

@@ -1,7 +1,6 @@
 package world.willfrog.racing.server.prompt;
 
 import static world.willfrog.racing.server.prompt.PromptSupport.*;
-import java.util.HashSet;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import world.willfrog.racing.idl.*;
@@ -16,13 +15,13 @@ public class PromptSetService {
 
     private final PromptRepository repository;
 
-    private final PromptReadService reads;
+    private final PromptSetVersionResolver resolver;
 
     private final PromptReferenceService references;
 
-    public PromptSetService(PromptRepository repository, PromptReadService reads, PromptReferenceService references) {
+    public PromptSetService(PromptRepository repository, PromptSetVersionResolver resolver, PromptReferenceService references) {
         this.repository = repository;
-        this.reads = reads;
+        this.resolver = resolver;
         this.references = references;
     }
 
@@ -59,26 +58,27 @@ public class PromptSetService {
     public PromptSetDetails createVersion(AuthorizedCall call, CreatePromptSetVersionRequest request) {
         var record = locked(call, request.getPromptSet());
         revision(record.getRevision(), request.getExpectedRevision());
-        require(request.getMembersCount() > 0, "INVALID_ARGUMENT", "集合至少需要一个片段");
-        var names = new HashSet<String>();
+        var definition = PromptSetVersion.newBuilder()
+                                         .setReference(PromptSetVersionRef.newBuilder().setScope(request.getPromptSet().getScope()).setPromptSetId(request.getPromptSet().getPromptSetId()).setVersion(record.getRevision()))
+                                         .addAllMembers(request.getMembersList())
+                                         .addAllRemovedFragmentNames(request.getRemovedFragmentNamesList())
+                                         .setCreation(creation(call));
+        if (request.hasBaseVersion()) {
+            definition.setBaseVersion(request.getBaseVersion());
+        }
+        // 校验临时展开结果；持久化对象始终是请求提交的原始定义。
+        var version = definition.build();
+        resolver.resolveDefinition(call, version);
         var refs = PromptReferenceReplacement.newBuilder()
                                              .setOwner(PromptReferenceOwner.newBuilder().setScope(request.getPromptSet().getScope()).setOwnerType("PROMPT_SET_VERSION").setOwnerId(request.getPromptSet()
                                                                                                                                                                                           .getPromptSetId() + ":" + record.getRevision()).setRevision(0));
         for (var member : request.getMembersList()) {
-            text(member.getFragmentName(), "fragment_name");
-            text(member.getExpectedPurpose(), "expected_purpose");
-            require(names.add(member.getFragmentName()), "INVALID_ARGUMENT", "集合片段名称不能重复");
             refs.addTargets(target(member.getVersion()));
         }
-        references.replaceForOwner(call, refs.build());
-        for (var member : request.getMembersList()) {
-            reads.getVersion(call, member.getVersion(), member.getExpectedPurpose());
+        if (request.hasBaseVersion()) {
+            refs.addTargets(target(request.getBaseVersion()));
         }
-        var version = PromptSetVersion.newBuilder()
-                                      .setReference(PromptSetVersionRef.newBuilder().setScope(request.getPromptSet().getScope()).setPromptSetId(request.getPromptSet().getPromptSetId()).setVersion(record.getRevision()))
-                                      .addAllMembers(request.getMembersList())
-                                      .setCreation(creation(call))
-                                      .build();
+        references.replaceForOwner(call, refs.build());
         repository.insertSetVersion(version);
         repository.updateSet(record.toBuilder().setRevision(record.getRevision() + 1).setLastModification(modification(call, "CREATE_VERSION")).build(), record.getRevision());
         return PromptSetDetails.newBuilder()
@@ -93,15 +93,16 @@ public class PromptSetService {
     }
 
     PromptSetVersion readVersion(AuthorizedCall call, PromptSetVersionRef ref, java.util.Map<PromptVersionRef, PromptVersion> versions) {
+        return resolver.resolve(call, ref, versions);
+    }
+
+    private PromptSetVersion storedDefinition(AuthorizedCall call, PromptSetVersionRef ref) {
         targetKey(target(ref));
         read(call, ref.getScope());
-        PromptSetVersion value = repository.setVersion(ref, false);
-        require(value != null, "PROMPT_SET_VERSION_NOT_FOUND", "指定集合版本不存在");
-        for (PromptSetMember member : value.getMembersList()) {
-            PromptVersion version = versions.computeIfAbsent(member.getVersion(), key -> reads.getVersion(call, key, ""));
-            require(member.getExpectedPurpose().equals(version.getPurpose()), "PROMPT_PURPOSE_MISMATCH", "提示词版本用途与集合要求不一致");
-        }
-        return value;
+        PromptSetVersion definition = repository.setVersion(ref, false);
+        require(definition != null, "PROMPT_SET_VERSION_NOT_FOUND", "指定集合版本不存在");
+        resolver.resolveDefinition(call, definition);
+        return definition;
     }
 
     @Transactional(readOnly = true)
@@ -113,7 +114,7 @@ public class PromptSetService {
         var b = PromptSetDetails.newBuilder()
                                 .setRecord(record);
         if (request.hasVersion()) {
-            b.setVersion(readVersion(call, PromptSetVersionRef.newBuilder().setScope(request.getPromptSet().getScope()).setPromptSetId(request.getPromptSet().getPromptSetId()).setVersion(request.getVersion()).build()));
+            b.setVersion(storedDefinition(call, PromptSetVersionRef.newBuilder().setScope(request.getPromptSet().getScope()).setPromptSetId(request.getPromptSet().getPromptSetId()).setVersion(request.getVersion()).build()));
         }
         return b.build();
     }
@@ -135,7 +136,8 @@ public class PromptSetService {
         var page = page(request.getPage());
         var b = PromptSetVersionList.newBuilder();
         for (var version : repository.setVersions(request.getPromptSet(), page.offset(), page.size())) {
-            b.addVersions(readVersion(call, version.getReference()));
+            resolver.resolveDefinition(call, version);
+            b.addVersions(version);
         }
         return b.setPage(page.info(repository.setVersionCount(request.getPromptSet())))
                 .build();
