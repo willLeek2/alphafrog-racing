@@ -272,8 +272,12 @@ message PromptSetRecord {
 
 message PromptSetVersion {
   PromptSetVersionRef reference = 1;
+  // Get/List返回保存的修改或新增成员；Read返回沿指定基准展开的实际整组。
   repeated PromptSetMember members = 2;
   PromptCreationInfo creation = 3;
+  // 初始版本无基准；继承始终引用已存在的明确版本。
+  PromptSetVersionRef base_version = 4;
+  repeated string removed_fragment_names = 5;
 }
 
 message PromptSetDetails {
@@ -306,7 +310,10 @@ message CreatePromptSetVersionRequest {
   RuntimeCallContext context = 1;
   PromptSetLocator prompt_set = 2;
   int64 expected_revision = 3;
+  // 有基准时按片段名新增或替换；无基准时表示初始整组。
   repeated PromptSetMember members = 4;
+  PromptSetVersionRef base_version = 5;
+  repeated string removed_fragment_names = 6;
 }
 
 message GetPromptSetRequest {
@@ -421,7 +428,12 @@ message PromptSelectionOrigin {
   // 记录实际读取的默认指针修订，而非正文版本号。
   int64 default_revision = 2;
   string business_name = 3;
-  ValueSource value_source = 4;
+  oneof source {
+    // 未参加实验的普通默认来源，沿用原字段编号。
+    ValueSource value_source = 4;
+    // 包含实验返回普通默认、候选或结束固定值的真实来源。
+    PromptExperimentSource experiment = 5;
+  }
 }
 
 // 根选择也是跨服务的集合绑定；公共上下文不反向依赖本消息。
@@ -443,6 +455,8 @@ message ResolvePromptSelectionRequest {
     PromptDefaultChoice prompt_default = 3;
     PromptSetDefaultChoice prompt_set_default = 4;
   }
+  // 集合选择可参与此实验，普通默认参数为其提供业务默认。
+  string experiment_id = 5;
 }
 
 message GetPromptSelectionRequest {
