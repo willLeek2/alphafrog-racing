@@ -29,5 +29,7 @@ public interface ExperimentConfigurationRepository {
     List<PublishedExperimentConfiguration> listVersions(ExperimentScope scope, String experimentId,
             int offset, int limit);
 
+    PublishedExperimentConfiguration findVersion(ExperimentScope scope, String experimentId, long version);
+
     List<ExperimentOperation> listOperations(ExperimentScope scope, String experimentId, int offset, int limit);
 }

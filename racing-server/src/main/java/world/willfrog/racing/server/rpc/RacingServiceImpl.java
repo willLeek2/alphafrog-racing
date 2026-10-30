@@ -10,7 +10,10 @@ import world.willfrog.racing.server.prompt.*;
 import org.springframework.dao.DataAccessException;
 import org.springframework.transaction.TransactionException;
 import world.willfrog.racing.server.evaluation.ExperimentEvaluationService;
+import world.willfrog.racing.server.history.ExperimentHistoryService;
 import world.willfrog.racing.server.input.ModelInputService;
+import world.willfrog.racing.server.result.ExperimentResultService;
+import world.willfrog.racing.server.security.DeveloperAuthorization;
 import world.willfrog.racing.idl.ConfirmRuntimeContextReply;
 import world.willfrog.racing.idl.ConfirmRuntimeContextRequest;
 import world.willfrog.racing.idl.DubboRacingServiceTriple.RacingServiceImplBase;
@@ -32,6 +35,9 @@ public final class RacingServiceImpl extends RacingServiceImplBase {
     private final ObjectProvider<PromptSetService> promptSets;
     private final ObjectProvider<PromptSelectionService> promptSelections;
     private final ObjectProvider<DefaultPromptReferenceService> promptReferences;
+    private final ObjectProvider<ExperimentHistoryService> histories;
+    private final DeveloperAuthorization developers;
+    private final ObjectProvider<ExperimentResultService> results;
 
     public RacingServiceImpl(ServiceAuthorization authorization,
             ObjectProvider<ExperimentEvaluationService> evaluations,
@@ -41,7 +47,10 @@ public final class RacingServiceImpl extends RacingServiceImplBase {
             ObjectProvider<PromptReadService> promptReads,
             ObjectProvider<PromptSetService> promptSets,
             ObjectProvider<PromptSelectionService> promptSelections,
-            ObjectProvider<DefaultPromptReferenceService> promptReferences) {
+            ObjectProvider<DefaultPromptReferenceService> promptReferences,
+            ObjectProvider<ExperimentHistoryService> histories,
+            DeveloperAuthorization developers,
+            ObjectProvider<ExperimentResultService> results) {
         this.authorization = authorization;
         this.evaluations = evaluations;
         this.configurations = configurations;
@@ -51,7 +60,9 @@ public final class RacingServiceImpl extends RacingServiceImplBase {
         this.promptSets = promptSets;
         this.promptSelections = promptSelections;
         this.promptReferences = promptReferences;
-
+        this.histories = histories;
+        this.developers = developers;
+        this.results = results;
     }
 
     /** 输入服务的事务代理提交成功后才会返回，入口据此封装保存回执。 */
@@ -947,5 +958,130 @@ public final class RacingServiceImpl extends RacingServiceImplBase {
         } catch (RacingServiceException failure) {
             return reply.setError(failure.error()).build();
         }
+    }
+
+    @Override
+    public ReadAssignmentHistoryReply readAssignmentHistory(ReadAssignmentHistoryRequest request) {
+        try {
+            if (request == null) {
+                throw RacingServiceException.failure("INVALID_ARGUMENT", "分配历史请求缺失");
+            }
+            ExperimentHistoryService service = histories.getIfAvailable();
+            if (service == null) {
+                throw RacingServiceException.failure("SCOPE_UNAVAILABLE", "实验历史服务尚未配置");
+            }
+            return ReadAssignmentHistoryReply.newBuilder().setPage(service.readAssignments(request)).build();
+        } catch (RacingServiceException failure) {
+            return ReadAssignmentHistoryReply.newBuilder().setError(failure.error()).build();
+        } catch (ExperimentConfigurationException failure) {
+            return ReadAssignmentHistoryReply.newBuilder().setError(failure.error()).build();
+        } catch (DataAccessException | TransactionException failure) {
+            return ReadAssignmentHistoryReply.newBuilder().setError(RacingError.newBuilder()
+                    .setCode("PERSISTENCE_UNCONFIRMED").setMessage("分配历史尚未确认，请用原范围重新查询")).build();
+        }
+    }
+
+    @Override
+    public ReadPromptSetVersionHistoryReply readPromptSetVersionHistory(ReadPromptSetVersionHistoryRequest request) {
+        try {
+            if (request == null) {
+                throw RacingServiceException.failure("INVALID_ARGUMENT", "整组历史请求缺失");
+            }
+            ExperimentHistoryService service = histories.getIfAvailable();
+            if (service == null) {
+                throw RacingServiceException.failure("SCOPE_UNAVAILABLE", "实验历史服务尚未配置");
+            }
+            return ReadPromptSetVersionHistoryReply.newBuilder().setVersion(service.readPromptSetVersion(
+                    request.getEnvironment(), request.getScopeInstanceId(), request.getPromptSetId(),
+                    request.getVersion())).build();
+        } catch (RacingServiceException failure) {
+            return ReadPromptSetVersionHistoryReply.newBuilder().setError(failure.error()).build();
+        } catch (DataAccessException | TransactionException failure) {
+            return ReadPromptSetVersionHistoryReply.newBuilder().setError(RacingError.newBuilder()
+                    .setCode("PERSISTENCE_UNCONFIRMED").setMessage("整组历史尚未确认，请用原引用重新查询")).build();
+        }
+    }
+
+    @Override
+    public ReadPromptVersionHistoryReply readPromptVersionHistory(ReadPromptVersionHistoryRequest request) {
+        try {
+            if (request == null || !request.hasVersion()) {
+                throw RacingServiceException.failure("INVALID_ARGUMENT", "正文历史请求缺少原版本引用");
+            }
+            ExperimentHistoryService service = histories.getIfAvailable();
+            if (service == null) {
+                throw RacingServiceException.failure("SCOPE_UNAVAILABLE", "实验历史服务尚未配置");
+            }
+            return ReadPromptVersionHistoryReply.newBuilder()
+                    .setVersion(service.readPromptVersion(request.getVersion())).build();
+        } catch (RacingServiceException failure) {
+            return ReadPromptVersionHistoryReply.newBuilder().setError(failure.error()).build();
+        } catch (DataAccessException | TransactionException failure) {
+            return ReadPromptVersionHistoryReply.newBuilder().setError(RacingError.newBuilder()
+                    .setCode("PERSISTENCE_UNCONFIRMED").setMessage("正文历史尚未确认，请用原引用重新查询")).build();
+        }
+    }
+
+    @Override
+    public QueryExperimentResultReply queryExperimentResult(QueryExperimentResultRequest request) {
+        try {
+            if (request == null) {
+                throw RacingServiceException.failure("INVALID_ARGUMENT", "实验结果查询请求缺失");
+            }
+            developers.authorize(DeveloperAuthorization.QUERY_EXPERIMENT_RESULT, request.getEnvironment(),
+                    request.getScopeInstanceId());
+            return QueryExperimentResultReply.newBuilder().setPage(resultService().query(request)).build();
+        } catch (RacingServiceException failure) {
+            return QueryExperimentResultReply.newBuilder().setError(failure.error()).build();
+        } catch (DataAccessException | TransactionException failure) {
+            return QueryExperimentResultReply.newBuilder().setError(RacingError.newBuilder()
+                    .setCode("PERSISTENCE_UNCONFIRMED").setMessage("实验结果尚未确认，请用原范围重新查询")).build();
+        }
+    }
+
+    @Override
+    public SupplementExperimentResultReply supplementExperimentResult(SupplementExperimentResultRequest request) {
+        try {
+            if (request == null) {
+                throw RacingServiceException.failure("INVALID_ARGUMENT", "实验结果补充请求缺失");
+            }
+            developers.authorize(DeveloperAuthorization.SUPPLEMENT_EXPERIMENT_RESULT, request.getEnvironment(),
+                    request.getScopeInstanceId());
+            resultService().supplement(request);
+            return SupplementExperimentResultReply.newBuilder().setAccepted(ExperimentResultAccepted.getDefaultInstance())
+                    .build();
+        } catch (RacingServiceException failure) {
+            return SupplementExperimentResultReply.newBuilder().setError(failure.error()).build();
+        } catch (DataAccessException | TransactionException failure) {
+            return SupplementExperimentResultReply.newBuilder().setError(RacingError.newBuilder()
+                    .setCode("PERSISTENCE_UNCONFIRMED").setMessage("实验结果补充尚未确认，请用原范围重新查询")).build();
+        }
+    }
+
+    @Override
+    public CorrectExperimentResultReply correctExperimentResult(CorrectExperimentResultRequest request) {
+        try {
+            if (request == null) {
+                throw RacingServiceException.failure("INVALID_ARGUMENT", "实验结果修正请求缺失");
+            }
+            developers.authorize(DeveloperAuthorization.CORRECT_EXPERIMENT_RESULT, request.getEnvironment(),
+                    request.getScopeInstanceId());
+            resultService().correct(request);
+            return CorrectExperimentResultReply.newBuilder().setAccepted(ExperimentResultAccepted.getDefaultInstance())
+                    .build();
+        } catch (RacingServiceException failure) {
+            return CorrectExperimentResultReply.newBuilder().setError(failure.error()).build();
+        } catch (DataAccessException | TransactionException failure) {
+            return CorrectExperimentResultReply.newBuilder().setError(RacingError.newBuilder()
+                    .setCode("PERSISTENCE_UNCONFIRMED").setMessage("实验结果修正尚未确认，请用原范围重新查询")).build();
+        }
+    }
+
+    private ExperimentResultService resultService() {
+        ExperimentResultService service = results.getIfAvailable();
+        if (service == null) {
+            throw RacingServiceException.failure("SCOPE_UNAVAILABLE", "实验结果服务尚未配置");
+        }
+        return service;
     }
 }

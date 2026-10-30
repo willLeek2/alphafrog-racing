@@ -1,0 +1,77 @@
+syntax = "proto3";
+
+option java_multiple_files = true;
+package world.willfrog.racing.idl;
+
+import "common.proto";
+import "experiment_configuration.proto";
+import "prompt.proto";
+
+// 历史读取使用开发者授权和原实例编号，不把当前进程身份当作查询范围。
+message ReadAssignmentHistoryRequest {
+  string environment = 1;
+  string scope_instance_id = 2;
+  string experiment_id = 3;
+  string owner_namespace = 4;
+  string owner_kind = 5;
+  string owner_scope_instance_id = 6;
+  string root_id = 7;
+  string assignment_id = 8;
+  int32 offset = 9;
+  int32 limit = 10;
+}
+
+message AssignmentHistoryRow {
+  string assignment_id = 1;
+  string environment = 2;
+  string scope_instance_id = 3;
+  string owner_namespace = 4;
+  string owner_kind = 5;
+  string owner_scope_instance_id = 6;
+  string root_id = 7;
+  string experiment_id = 8;
+  optional int64 configuration_version = 9;
+  string candidate_id = 10;
+  string value_json = 11;
+  string source_kind = 12;
+  string business_default_source_json = 13;
+  string service_principal = 14;
+  string created_at = 15;
+  PublishedExperimentConfiguration configuration = 16;
+}
+
+message AssignmentHistoryPage {
+  repeated AssignmentHistoryRow rows = 1;
+}
+
+message ReadAssignmentHistoryReply {
+  oneof result {
+    AssignmentHistoryPage page = 1;
+    RacingError error = 2;
+  }
+}
+
+message ReadPromptSetVersionHistoryRequest {
+  string environment = 1;
+  string scope_instance_id = 2;
+  string prompt_set_id = 3;
+  int64 version = 4;
+}
+
+message ReadPromptSetVersionHistoryReply {
+  oneof result {
+    PromptSetVersion version = 1;
+    RacingError error = 2;
+  }
+}
+
+message ReadPromptVersionHistoryRequest {
+  PromptVersionRef version = 1;
+}
+
+message ReadPromptVersionHistoryReply {
+  oneof result {
+    PromptVersion version = 1;
+    RacingError error = 2;
+  }
+}

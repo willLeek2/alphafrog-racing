@@ -99,6 +99,12 @@ public class MyBatisExperimentConfigurationRepository implements ExperimentConfi
     }
 
     @Override
+    public PublishedExperimentConfiguration findVersion(ExperimentScope scope, String experimentId, long version) {
+        Map<String, Object> row = mapper.findVersion(scope, experimentId, version);
+        return row == null ? null : version(row);
+    }
+
+    @Override
     public List<ExperimentOperation> listOperations(ExperimentScope scope, String experimentId, int offset, int limit) {
         return mapper.listOperations(scope, experimentId, offset, limit).stream()
                 .map(json -> parse(json, ExperimentOperation.newBuilder()).build()).toList();

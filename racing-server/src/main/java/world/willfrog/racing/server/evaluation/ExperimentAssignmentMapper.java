@@ -40,4 +40,40 @@ public interface ExperimentAssignmentMapper {
             String candidateId, String sourceKind, String businessDefaultSourceJson) {
         @Override public String toString() { return "Assignment[id=" + assignmentId + "]"; }
     }
+
+    @Select("""
+            <script>
+            SELECT assignment_id::text AS "assignmentId", environment, scope_instance_id AS "scopeInstanceId",
+                   owner_namespace AS "ownerNamespace", owner_kind AS "ownerKind",
+                   owner_scope_instance_id AS "ownerScopeInstanceId", root_id AS "rootId",
+                   experiment_id AS "experimentId", configuration_version AS "configurationVersion",
+                   candidate_id AS "candidateId", value_json AS "valueJson", source_kind AS "sourceKind",
+                   business_default_source_json AS "businessDefaultSourceJson",
+                   service_principal AS "servicePrincipal", created_at::text AS "createdAt"
+            FROM racing_experiment_assignment
+            WHERE environment = #{environment} AND scope_instance_id = #{scopeInstanceId}
+            <if test="experimentId != null and experimentId != ''">AND experiment_id = #{experimentId}</if>
+            <if test="ownerNamespace != null and ownerNamespace != ''">AND owner_namespace = #{ownerNamespace}</if>
+            <if test="ownerKind != null and ownerKind != ''">AND owner_kind = #{ownerKind}</if>
+            <if test="ownerScopeInstanceId != null and ownerScopeInstanceId != ''">
+              AND owner_scope_instance_id = #{ownerScopeInstanceId}</if>
+            <if test="rootId != null and rootId != ''">AND root_id = #{rootId}</if>
+            <if test="assignmentId != null and assignmentId != ''">
+              AND assignment_id = CAST(#{assignmentId} AS uuid)</if>
+            ORDER BY created_at, assignment_id
+            LIMIT #{limit} OFFSET #{offset}
+            </script>
+            """)
+    java.util.List<HistoryRow> listByScope(@Param("environment") String environment,
+            @Param("scopeInstanceId") String scopeInstanceId, @Param("experimentId") String experimentId,
+            @Param("ownerNamespace") String ownerNamespace, @Param("ownerKind") String ownerKind,
+            @Param("ownerScopeInstanceId") String ownerScopeInstanceId, @Param("rootId") String rootId,
+            @Param("assignmentId") String assignmentId, @Param("offset") int offset, @Param("limit") int limit);
+
+    record HistoryRow(String assignmentId, String environment, String scopeInstanceId, String ownerNamespace,
+            String ownerKind, String ownerScopeInstanceId, String rootId, String experimentId,
+            Long configurationVersion, String candidateId, String valueJson, String sourceKind,
+            String businessDefaultSourceJson, String servicePrincipal, String createdAt) {
+        @Override public String toString() { return "HistoryRow[id=" + assignmentId + "]"; }
+    }
 }
