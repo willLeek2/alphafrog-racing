@@ -32,6 +32,10 @@ public final class RacingRuntimeProperties {
         return required("RACING_SERVICE_GRANTS_JSON");
     }
 
+    public String developerGrantsJson() {
+        return required("RACING_DEVELOPER_GRANTS_JSON");
+    }
+
     private String required(String key) {
         String value = present(key);
         if (value.isBlank()) throw unavailable(key);
