@@ -22,7 +22,7 @@ import world.willfrog.racing.server.security.RacingServiceException;
 /** 按原实例读取已保存的分配、整组定义和单条正文。不展开整组，也不改用当前发布版。 */
 @Service
 @Transactional(readOnly = true)
-public final class ExperimentHistoryService {
+public class ExperimentHistoryService {
     private static final String ASSIGNMENT_ID = "[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-"
             + "[0-9a-fA-F]{4}-[0-9a-fA-F]{12}";
     private final DeveloperAuthorization developers;
