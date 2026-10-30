@@ -1,0 +1,37 @@
+syntax = "proto3";
+
+option java_multiple_files = true;
+package world.willfrog.racing.idl;
+
+import "common.proto";
+
+// 一次实际使用。结果正文留空表示这次请求不改已有反馈。
+message RecordExperimentUsageRequest {
+  RuntimeCallContext context = 1;
+  string experiment_id = 2;
+  string usage_attempt_id = 3;
+  string assignment_id = 4;
+  string adopted_value_json = 5;
+  string difference_reason = 6;
+  bool safety_default = 7;
+  string safety_default_reason = 8;
+  string content_checksum = 9;
+  optional bool content_check_passed = 10;
+  string content_check_reason = 11;
+  string result_json = 12;
+  string occurred_at = 13;
+}
+
+message ExperimentUsageReceipt {
+  string usage_id = 1;
+  string usage_attempt_id = 2;
+  string feedback_id = 3;
+}
+
+message RecordExperimentUsageReply {
+  oneof result {
+    ExperimentUsageReceipt receipt = 1;
+    RacingError error = 2;
+  }
+  RuntimeIdentity actual_target = 3;
+}
