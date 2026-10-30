@@ -26,6 +26,7 @@ public final class DeveloperAuthorization {
     public static final String QUERY_EXPERIMENT_RESULT = "QueryExperimentResult";
     public static final String SUPPLEMENT_EXPERIMENT_RESULT = "SupplementExperimentResult";
     public static final String CORRECT_EXPERIMENT_RESULT = "CorrectExperimentResult";
+    public static final String DELETE_EXPERIMENT_RESULT = "DeleteExperimentResult";
     private static final ObjectMapper JSON = new ObjectMapper(JsonFactory.builder()
             .enable(StreamReadFeature.STRICT_DUPLICATE_DETECTION).build())
             .enable(DeserializationFeature.FAIL_ON_TRAILING_TOKENS);

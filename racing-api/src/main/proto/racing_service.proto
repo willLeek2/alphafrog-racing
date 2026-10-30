@@ -61,4 +61,6 @@ service RacingService {
   rpc QueryExperimentResult(QueryExperimentResultRequest) returns (QueryExperimentResultReply);
   rpc SupplementExperimentResult(SupplementExperimentResultRequest) returns (SupplementExperimentResultReply);
   rpc CorrectExperimentResult(CorrectExperimentResultRequest) returns (CorrectExperimentResultReply);
+  rpc DeleteExperimentResult(DeleteExperimentResultRequest) returns (DeleteExperimentResultReply);
+  rpc SummarizeExperimentResult(SummarizeExperimentResultRequest) returns (SummarizeExperimentResultReply);
 }
