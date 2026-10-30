@@ -68,6 +68,10 @@ public class PromptSourceService {
                     require(source.getSelectionKey().equals(selection.getSelectionKey()), "PROMPT_SOURCE_MISMATCH", "输入来源选择键与持久选择不一致");
                 }
             }
+            if (selection != null && selection.getSelectedTarget().hasPromptSetVersion()) {
+                require(source.hasPromptSetVersion(), "PROMPT_SOURCE_MISMATCH", "根已选择集合，来源必须提供该集合及片段");
+                text(source.getFragmentName(), "fragment_name");
+            }
             boolean experiment = source.hasExperiment();
             if (source.hasPromptSetVersion()) {
                 require(selection != null && selection.getSelectedTarget()
