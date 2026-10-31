@@ -25,7 +25,7 @@ public interface ExperimentResultMapper {
 
     @Select("""
             <script>
-            SELECT """ + ROW_COLUMNS + """
+            """ + "SELECT " + ROW_COLUMNS + """
             FROM racing_experiment_usage u
             LEFT JOIN racing_experiment_result_feedback f ON f.usage_id = u.usage_id
             WHERE u.environment = #{environment}
