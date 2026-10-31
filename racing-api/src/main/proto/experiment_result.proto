@@ -40,6 +40,10 @@ message ExperimentResultRow {
   string content_checksum = 15;
   // 业务未提供时留空。
   string result_json = 16;
+  string usage_id = 17;
+  string current_run_id = 18;
+  // ONLINE、OFFLINE，或空字符串表示读不到已发布版本。
+  string run_mode = 19;
 }
 
 // 顺序为 recorded_at、call_id。
@@ -54,15 +58,25 @@ message QueryExperimentResultReply {
   }
 }
 
-// 定位一条结果的字段尚未写入。这一笔只携带授权所需的原环境和原实例。
+// 环境和泳道实例供开发者授权。usage_id 定位一条实际使用。
 message SupplementExperimentResultRequest {
   string environment = 1;
   string scope_instance_id = 2;
+  string usage_id = 3;
+  string result_json = 4;
 }
 
 message CorrectExperimentResultRequest {
   string environment = 1;
   string scope_instance_id = 2;
+  string usage_id = 3;
+  string result_json = 4;
+}
+
+message DeleteExperimentResultRequest {
+  string environment = 1;
+  string scope_instance_id = 2;
+  string usage_id = 3;
 }
 
 message ExperimentResultAccepted {}
@@ -77,6 +91,47 @@ message SupplementExperimentResultReply {
 message CorrectExperimentResultReply {
   oneof result {
     ExperimentResultAccepted accepted = 1;
+    RacingError error = 2;
+  }
+}
+
+message DeleteExperimentResultReply {
+  oneof result {
+    ExperimentResultAccepted accepted = 1;
+    RacingError error = 2;
+  }
+}
+
+// 筛选与查询明细相同。run_mode 为空表示不按运行方式筛选。
+message SummarizeExperimentResultRequest {
+  string environment = 1;
+  string scope_instance_id = 2;
+  string experiment_id = 3;
+  optional int64 configuration_version = 4;
+  string adopted_value_json = 5;
+  string run_mode = 6;
+}
+
+// assignment_count 是该实验和配置版本在获准范围内的分配行数，同一版本的各个采用值分组上重复出现。
+// 使用数、缺失结果数和随机样本数按本组计算。随机样本数排除来源 ENDED_FIXED。
+message ExperimentResultSummaryGroup {
+  string experiment_id = 1;
+  optional int64 configuration_version = 2;
+  string adopted_value_json = 3;
+  string run_mode = 4;
+  int64 assignment_count = 5;
+  int64 usage_count = 6;
+  int64 missing_result_count = 7;
+  int64 sample_count = 8;
+}
+
+message ExperimentResultSummary {
+  repeated ExperimentResultSummaryGroup groups = 1;
+}
+
+message SummarizeExperimentResultReply {
+  oneof result {
+    ExperimentResultSummary summary = 1;
     RacingError error = 2;
   }
 }

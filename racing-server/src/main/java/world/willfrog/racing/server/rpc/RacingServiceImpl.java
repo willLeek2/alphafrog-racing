@@ -1106,6 +1106,42 @@ public final class RacingServiceImpl extends RacingServiceImplBase {
         }
     }
 
+    @Override
+    public DeleteExperimentResultReply deleteExperimentResult(DeleteExperimentResultRequest request) {
+        try {
+            if (request == null) {
+                throw RacingServiceException.failure("INVALID_ARGUMENT", "实验结果删除请求缺失");
+            }
+            developers.authorize(DeveloperAuthorization.DELETE_EXPERIMENT_RESULT, request.getEnvironment(),
+                    request.getScopeInstanceId());
+            resultService().delete(request);
+            return DeleteExperimentResultReply.newBuilder().setAccepted(ExperimentResultAccepted.getDefaultInstance())
+                    .build();
+        } catch (RacingServiceException failure) {
+            return DeleteExperimentResultReply.newBuilder().setError(failure.error()).build();
+        } catch (DataAccessException | TransactionException failure) {
+            return DeleteExperimentResultReply.newBuilder().setError(RacingError.newBuilder()
+                    .setCode("PERSISTENCE_UNCONFIRMED").setMessage("实验结果删除尚未确认，请用原范围重新查询")).build();
+        }
+    }
+
+    @Override
+    public SummarizeExperimentResultReply summarizeExperimentResult(SummarizeExperimentResultRequest request) {
+        try {
+            if (request == null) {
+                throw RacingServiceException.failure("INVALID_ARGUMENT", "实验结果汇总请求缺失");
+            }
+            developers.authorize(DeveloperAuthorization.QUERY_EXPERIMENT_RESULT, request.getEnvironment(),
+                    request.getScopeInstanceId());
+            return SummarizeExperimentResultReply.newBuilder().setSummary(resultService().summarize(request)).build();
+        } catch (RacingServiceException failure) {
+            return SummarizeExperimentResultReply.newBuilder().setError(failure.error()).build();
+        } catch (DataAccessException | TransactionException failure) {
+            return SummarizeExperimentResultReply.newBuilder().setError(RacingError.newBuilder()
+                    .setCode("PERSISTENCE_UNCONFIRMED").setMessage("实验结果汇总尚未确认，请用原范围重新查询")).build();
+        }
+    }
+
     private ExperimentResultService resultService() {
         ExperimentResultService service = results.getIfAvailable();
         if (service == null) {
