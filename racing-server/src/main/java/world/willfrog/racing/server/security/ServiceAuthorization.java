@@ -26,7 +26,7 @@ public final class ServiceAuthorization {
     public static final String KEY_ID_ATTACHMENT = "racing.service-key-id";
     public static final String TOKEN_ATTACHMENT = "racing.service-token";
     private static final Set<String> ROOT_REQUIRED = Set.of(
-            "Evaluate", "ResolvePromptSelection", "GetPromptSelection", "StoreModelInput");
+            "Evaluate", "RecordExperimentUsage", "ResolvePromptSelection", "GetPromptSelection", "StoreModelInput");
     private static final ObjectMapper JSON = new ObjectMapper(JsonFactory.builder()
             .enable(StreamReadFeature.STRICT_DUPLICATE_DETECTION).build())
             .enable(DeserializationFeature.FAIL_ON_TRAILING_TOKENS);

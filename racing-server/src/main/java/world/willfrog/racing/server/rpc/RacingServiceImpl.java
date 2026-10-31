@@ -14,6 +14,7 @@ import world.willfrog.racing.server.history.ExperimentHistoryService;
 import world.willfrog.racing.server.input.ModelInputService;
 import world.willfrog.racing.server.result.ExperimentResultService;
 import world.willfrog.racing.server.security.DeveloperAuthorization;
+import world.willfrog.racing.server.usage.ExperimentUsageService;
 import world.willfrog.racing.idl.ConfirmRuntimeContextReply;
 import world.willfrog.racing.idl.ConfirmRuntimeContextRequest;
 import world.willfrog.racing.idl.DubboRacingServiceTriple.RacingServiceImplBase;
@@ -38,6 +39,7 @@ public final class RacingServiceImpl extends RacingServiceImplBase {
     private final ObjectProvider<ExperimentHistoryService> histories;
     private final DeveloperAuthorization developers;
     private final ObjectProvider<ExperimentResultService> results;
+    private final ObjectProvider<ExperimentUsageService> usages;
 
     public RacingServiceImpl(ServiceAuthorization authorization,
             ObjectProvider<ExperimentEvaluationService> evaluations,
@@ -50,7 +52,8 @@ public final class RacingServiceImpl extends RacingServiceImplBase {
             ObjectProvider<DefaultPromptReferenceService> promptReferences,
             ObjectProvider<ExperimentHistoryService> histories,
             DeveloperAuthorization developers,
-            ObjectProvider<ExperimentResultService> results) {
+            ObjectProvider<ExperimentResultService> results,
+            ObjectProvider<ExperimentUsageService> usages) {
         this.authorization = authorization;
         this.evaluations = evaluations;
         this.configurations = configurations;
@@ -63,6 +66,7 @@ public final class RacingServiceImpl extends RacingServiceImplBase {
         this.histories = histories;
         this.developers = developers;
         this.results = results;
+        this.usages = usages;
     }
 
     /** 输入服务的事务代理提交成功后才会返回，入口据此封装保存回执。 */
@@ -106,6 +110,31 @@ public final class RacingServiceImpl extends RacingServiceImplBase {
             return EvaluateReply.newBuilder().setError(failure.error()).build();
         } catch (world.willfrog.racing.server.configuration.ExperimentConfigurationException failure) {
             return EvaluateReply.newBuilder().setError(failure.error()).build();
+        }
+    }
+
+    /** 授权通过后才保存；成功回复带上实际处理这次请求的平台实例。 */
+    @Override
+    public RecordExperimentUsageReply recordExperimentUsage(RecordExperimentUsageRequest request) {
+        var reply = RecordExperimentUsageReply.newBuilder();
+        try {
+            if (request == null || !request.hasContext()) {
+                throw RacingServiceException.failure("INVALID_ARGUMENT", "使用上报缺少运行上下文");
+            }
+            var call = authorization.authorize("RecordExperimentUsage", request.getContext());
+            reply.setActualTarget(call.actualTarget());
+            var service = usages.getIfAvailable();
+            if (service == null) {
+                throw RacingServiceException.failure("SCOPE_UNAVAILABLE", "使用记录服务尚未配置");
+            }
+            return reply.setReceipt(service.record(call, request)).build();
+        } catch (RacingServiceException failure) {
+            return reply.setError(failure.error()).build();
+        } catch (ExperimentConfigurationException failure) {
+            return reply.setError(failure.error()).build();
+        } catch (DataAccessException | TransactionException failure) {
+            return reply.setError(RacingError.newBuilder().setCode("PERSISTENCE_UNCONFIRMED")
+                    .setMessage("使用记录尚未确认保存，请用同一次上报重试")).build();
         }
     }
 

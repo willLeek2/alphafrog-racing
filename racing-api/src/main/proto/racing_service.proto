@@ -10,11 +10,13 @@ import "model_input.proto";
 import "experiment_configuration.proto";
 import "experiment_history.proto";
 import "experiment_result.proto";
+import "experiment_usage.proto";
 
 // 业务入口统一鉴权与目标核对，再委托给各自业务服务。
 service RacingService {
   rpc ConfirmRuntimeContext(ConfirmRuntimeContextRequest) returns (ConfirmRuntimeContextReply);
   rpc Evaluate(EvaluateRequest) returns (EvaluateReply);
+  rpc RecordExperimentUsage(RecordExperimentUsageRequest) returns (RecordExperimentUsageReply);
   rpc CreatePrompt(CreatePromptRequest) returns (PromptDetailsReply);
   rpc UpdatePromptMetadata(UpdatePromptMetadataRequest) returns (PromptRecordReply);
   rpc CreatePromptVersion(CreatePromptVersionRequest) returns (PromptDetailsReply);
