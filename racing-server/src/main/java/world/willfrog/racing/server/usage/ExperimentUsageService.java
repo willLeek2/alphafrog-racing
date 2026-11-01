@@ -84,7 +84,7 @@ public final class ExperimentUsageService {
                 return confirmed;
             }
         } catch (DataAccessException | TransactionException ignored) {
-            // 读回本身失败时不编造使用行编号。
+            // 读回失败时返回错误，等待调用方确认原使用记录。
         }
         throw unconfirmed();
     }

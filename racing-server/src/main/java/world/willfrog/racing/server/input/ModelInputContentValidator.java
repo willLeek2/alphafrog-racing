@@ -30,7 +30,7 @@ import world.willfrog.racing.idl.ValueSource;
 import world.willfrog.racing.idl.ValueSourceKind;
 import world.willfrog.racing.server.prompt.PromptBusinessException;
 
-/** 独立核对原始输入与实际来源位置；不代替版本查询、授权及引用保存事务。 */
+/** 核对原始输入与实际来源位置；版本、授权及引用由保存事务检查。 */
 public final class ModelInputContentValidator {
     private static final ObjectMapper JSON = new ObjectMapper()
             .enable(DeserializationFeature.FAIL_ON_TRAILING_TOKENS);
@@ -44,7 +44,7 @@ public final class ModelInputContentValidator {
         if (!request.hasContext() || !request.getContext().hasRoot() || !request.getContext().hasTarget()) {
             throw invalid("context", "REQUIRED", "模型输入需要根归属和目标上下文");
         }
-        // context和sources进入JSONB；这里只查可保存字符，实际身份与权限由公共入口核对。
+        // context与sources使用JSONB保存，此处校验字符；公共入口核对身份及权限。
         storedMessage(request.getContext(), "context");
         byte[] bytes = storedText(request.getInputJson(), "input_json");
         String digest = sha256(bytes);
@@ -373,7 +373,7 @@ public final class ModelInputContentValidator {
     private record Position(ModelInputSourceBinding.LocationCase kind, int messageIndex, String name,
                             boolean instruction, String coveredBy, String safeField) { }
 
-    /** 原请求不可变；长度与摘要来自原input_json的UTF-8字节，不重写正文。 */
+    /** 原请求保持固定，长度和摘要采用input_json原始UTF-8字节计算。 */
     public record Validated(StoreModelInputRequest request, long utf8Length, String sha256) {
         @Override
         public String toString() {

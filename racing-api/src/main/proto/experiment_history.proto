@@ -7,7 +7,7 @@ import "common.proto";
 import "experiment_configuration.proto";
 import "prompt.proto";
 
-// 历史读取使用开发者授权和原实例编号，不把当前进程身份当作查询范围。
+// 开发者按授权范围和原实例编号读取历史。
 message ReadAssignmentHistoryRequest {
   string environment = 1;
   string scope_instance_id = 2;

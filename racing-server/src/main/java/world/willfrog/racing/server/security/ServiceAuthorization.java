@@ -127,7 +127,7 @@ public final class ServiceAuthorization {
         } catch (RacingServiceException ex) {
             throw ex;
         } catch (Exception ex) {
-            // 解析器异常可能包含配置正文，不能把原异常或凭据内容带入回复和日志。
+            // 解析异常可能包含配置正文，因此仅返回安全错误信息。
             throw RacingServiceException.failure("SCOPE_UNAVAILABLE", "实验平台服务授权配置格式错误");
         }
     }

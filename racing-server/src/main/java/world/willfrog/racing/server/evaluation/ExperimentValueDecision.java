@@ -27,7 +27,7 @@ public final class ExperimentValueDecision {
         this.values = values;
     }
 
-    /** 配置来自当前事务持有共享行锁的记录；本方法不查询数据库，也不创建分配编号。 */
+    /** 使用当前事务共享行锁保护的配置记录，计算待保存的分配。 */
     public Decision select(ExperimentBucket.EvaluationKey key, ExperimentRecord experiment,
             String ordinaryDefaultJson, String ordinaryDefaultSourceJson) {
         if (key == null) throw failure("INVALID_ARGUMENT", "首次取值缺少完整根身份");
@@ -90,7 +90,7 @@ public final class ExperimentValueDecision {
         };
     }
 
-    /** TEXT与JSONB均须无损保存；拒绝转义后形成的NUL和孤立代理字符，原文保持。 */
+    /** 原文必须满足TEXT和JSONB字符约束；NUL及孤立代理字符校验失败时返回错误。 */
     private static void storedJson(String text, String field) {
         try {
             requireStoredText(text);
@@ -126,7 +126,7 @@ public final class ExperimentValueDecision {
         return RacingServiceException.failure(code, message);
     }
 
-    /** 需要保存时，该内容必须经过唯一键写入和提交确认，不能直接作为成功回复。 */
+    /** 待保存内容通过唯一键写入及提交确认后，才能作为成功结果返回。 */
     public record Decision(String valueJson, ValueSource source, boolean requiresAssignment) {
         @Override
         public String toString() {

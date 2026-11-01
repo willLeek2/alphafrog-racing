@@ -12,9 +12,7 @@ import java.util.stream.Collectors;
 import org.springframework.stereotype.Repository;
 import world.willfrog.racing.idl.*;
 
-/**
- * 将不可变协议对象按既有八表结构保存；不把正文重新序列化或裁剪。
- */
+/** 按数据库表结构保存不可变协议对象，保留正文原文。 */
 @Repository
 public class MybatisPromptRepository implements PromptRepository {
 

@@ -6,9 +6,7 @@ import org.springframework.transaction.annotation.Transactional;
 import world.willfrog.racing.idl.*;
 import world.willfrog.racing.server.security.AuthorizedCall;
 
-/**
- * 每次读取都检查当前版本授权；不把缺失版本替换为当前默认。
- */
+/** 每次读取明确版本时检查当前授权。 */
 @Service
 @Transactional(readOnly = true)
 public class PromptReadService {

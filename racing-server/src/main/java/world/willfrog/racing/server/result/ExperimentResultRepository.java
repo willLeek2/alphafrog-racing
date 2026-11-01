@@ -3,7 +3,7 @@ package world.willfrog.racing.server.result;
 import java.util.List;
 import org.springframework.stereotype.Repository;
 
-/** 查询和改写都落在调用方已经打开的事务里。 */
+/** 查询与更新共同使用调用方事务。 */
 @Repository
 public class ExperimentResultRepository {
     private final ExperimentResultMapper mapper;

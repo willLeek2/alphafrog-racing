@@ -5,7 +5,7 @@ import java.util.Objects;
 import world.willfrog.racing.idl.FieldViolation;
 import world.willfrog.racing.idl.RacingError;
 
-/** 结构化提示词业务错误；异常消息不包含正文、变量值或底层异常。 */
+/** 提示词业务错误仅保留结构化原因，保护正文及变量。 */
 public final class PromptBusinessException extends RuntimeException {
     private final RacingError error;
 
@@ -18,7 +18,7 @@ public final class PromptBusinessException extends RuntimeException {
         return error;
     }
 
-    /** 调用方提供静态字段路径和原因，不把待保存的字段值写入错误。 */
+    /** 调用方提供静态字段路径和原因，待保存值由业务层保管。 */
     public static PromptBusinessException invalid(List<FieldViolation> violations) {
         return new PromptBusinessException(RacingError.newBuilder()
                 .setCode("INVALID_ARGUMENT")

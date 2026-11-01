@@ -18,7 +18,7 @@ import world.willfrog.racing.idl.FieldViolation;
 import world.willfrog.racing.idl.PromptVariableDeclaration;
 import world.willfrog.racing.idl.PromptVersionInput;
 
-/** 在保存前核对正文与声明，保留原字符、换行和BOM，不执行模板替换。 */
+/** 保存前核对正文和变量声明，保留原字符、换行与BOM。 */
 public final class PromptContentValidator {
 
     public ValidatedPromptContent validate(PromptVersionInput input) {
@@ -43,7 +43,7 @@ public final class PromptContentValidator {
             requiredText(input.getReadableScopes(i).getEnvironment(), path + ".environment", errors);
             requiredText(input.getReadableScopes(i).getScopeInstanceId(), path + ".scope_instance_id", errors);
         }
-        // 空授权清单原样保留；读取业务不能把它解释为公开授权。
+        // 空授权清单原样保留，读取时按无授权对象处理。
         if (input.hasImportOrigin()) {
             requiredText(input.getImportOrigin().getSourceName(), "import_origin.source_name", errors);
             requiredText(input.getImportOrigin().getSourceRevision(), "import_origin.source_revision", errors);
@@ -114,7 +114,7 @@ public final class PromptContentValidator {
     }
 
     private static boolean validVariableName(String name) {
-        // 与调用侧按原文匹配，不收窄为ASCII标识符，也不裁剪变量名。
+        // 按原文精确匹配变量名，与调用侧规则一致。
         return !name.isBlank() && name.indexOf('{') < 0 && name.indexOf('}') < 0
                 && name.chars().noneMatch(Character::isISOControl);
     }
@@ -127,7 +127,7 @@ public final class PromptContentValidator {
     }
 
     private static byte[] storedText(String value, String field, List<FieldViolation> errors) {
-        // PostgreSQL TEXT和JSONB不能保存U+0000；拒绝而不替换或截断。
+        // 按PostgreSQL字符约束拒绝U+0000，正文保持原文。
         if (value.indexOf('\0') >= 0) {
             add(errors, field, "UNSUPPORTED_NUL", "字段不能包含U+0000字符");
         }

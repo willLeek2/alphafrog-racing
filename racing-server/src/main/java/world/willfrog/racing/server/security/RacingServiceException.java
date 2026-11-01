@@ -2,7 +2,7 @@ package world.willfrog.racing.server.security;
 
 import world.willfrog.racing.idl.RacingError;
 
-/** 公共入口保留明确错误原因，不将权限失败转换成可执行的默认值。 */
+/** 公共入口以稳定业务错误返回权限及其他拒绝原因。 */
 public final class RacingServiceException extends RuntimeException {
     private final RacingError error;
 

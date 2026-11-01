@@ -30,8 +30,8 @@ import world.willfrog.racing.server.result.ExperimentResultMapper.UsageCount;
 import world.willfrog.racing.server.security.RacingServiceException;
 
 /**
- * 查询、补充、修正、删除和汇总实验结果。远程入口已经完成开发者授权。
- * 运行方式只读已发布配置。没有版本时返回未知，不用草稿补猜。
+ * 查询、补充、修正、删除及汇总实验结果，入口已完成开发者授权。
+ * 运行方式取自已发布配置；缺少版本时返回未知。
  */
 @Service
 public class ExperimentResultService {

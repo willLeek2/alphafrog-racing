@@ -1,4 +1,4 @@
--- PostgreSQL：正文、集合、引用和原始模型输入。执行由部署流程明确授权。
+-- PostgreSQL表保存正文、集合、引用及原始模型输入。
 BEGIN;
 
 CREATE TABLE racing_prompt (
@@ -122,13 +122,13 @@ CREATE TABLE racing_prompt_reference (
     reference_id UUID PRIMARY KEY,
     environment TEXT NOT NULL,
     scope_instance_id TEXT NOT NULL,
-    -- 引用方的权限与修订由业务在同一事务核对，普通JSON不推导为正文引用。
+    -- 业务在同一事务核对引用方权限与修订，按明确清单登记正文引用。
     owner_environment TEXT NOT NULL,
     owner_scope_instance_id TEXT NOT NULL,
     owner_service TEXT NOT NULL,
     owner_type TEXT NOT NULL,
     owner_id TEXT NOT NULL,
-    -- 根选择和输入本身没有可变修订，使用0；草稿等业务使用真实正修订。
+    -- 根选择和输入使用修订0；草稿等可变业务使用各自的正修订。
     owner_revision BIGINT NOT NULL CHECK (owner_revision >= 0),
     prompt_id UUID,
     prompt_version BIGINT,
@@ -173,7 +173,7 @@ CREATE TABLE racing_model_input (
     logical_call_id UUID NOT NULL,
     attempt_id UUID NOT NULL,
     endpoint_name TEXT NOT NULL,
-    -- 正文使用TEXT，不能由JSONB重新序列化后冒充实际发送字节。
+    -- TEXT保留实际发送正文的原始字节表示。
     body_json TEXT NOT NULL,
     utf8_length BIGINT NOT NULL CHECK (utf8_length >= 0),
     body_sha256 TEXT NOT NULL CHECK (body_sha256 ~ '^[0-9a-f]{64}$'),

@@ -5,7 +5,7 @@ import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
 
-/** 复用03表的业务唯一键；冲突时保留先提交的分配。 */
+/** 按业务唯一键保存分配，冲突时保留先提交的记录。 */
 @Mapper
 public interface ExperimentAssignmentMapper {
     @Select("""

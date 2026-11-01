@@ -19,7 +19,7 @@ import world.willfrog.racing.server.prompt.PromptRepository;
 import world.willfrog.racing.server.security.DeveloperAuthorization;
 import world.willfrog.racing.server.security.RacingServiceException;
 
-/** 按原实例读取已保存的分配、整组定义和单条正文。不展开整组，也不改用当前发布版。 */
+/** 按原实例读取已保存的分配、集合原始定义及明确版本正文。 */
 @Service
 @Transactional(readOnly = true)
 public class ExperimentHistoryService {

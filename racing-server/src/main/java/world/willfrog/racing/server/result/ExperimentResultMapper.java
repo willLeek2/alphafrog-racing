@@ -8,7 +8,7 @@ import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
 import org.apache.ibatis.annotations.Update;
 
-/** 使用行按获准范围读取；反馈按使用行唯一。 */
+/** 按获准范围读取使用记录，每条使用记录对应唯一反馈。 */
 @Mapper
 public interface ExperimentResultMapper {
     String ROW_COLUMNS = """

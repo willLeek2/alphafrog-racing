@@ -26,7 +26,7 @@ import org.apache.dubbo.config.bootstrap.DubboBootstrap;
 import org.apache.dubbo.rpc.RpcContext;
 import world.willfrog.racing.idl.*;
 
-/** 管理命令使用生成的远程接口；凭据只从进程环境读取，不放入请求正文。 */
+/** 管理命令使用生成的远程接口，凭据从进程环境放入调用附件。 */
 public final class PromptAdminClient {
     private static final ObjectMapper JSON = new ObjectMapper(JsonFactory.builder()
             .enable(StreamReadFeature.STRICT_DUPLICATE_DETECTION).build())
@@ -149,7 +149,7 @@ public final class PromptAdminClient {
             attachment(CommonConstants.TAG_KEY, tag.isBlank() ? null : tag);
             attachment(FORCE_TAG, tag.isBlank() ? null : "true");
             String methodName = Character.toLowerCase(operation.charAt(0)) + operation.substring(1);
-            // 只反射上面固定清单中的生成方法，操作名不能指定任意类或Java方法。
+            // 反射调用仅限固定清单中的生成方法。
             Method method = RacingService.class.getMethod(methodName, type);
             Message reply = (Message) method.invoke(reference.get(), request);
             var result = reply.getDescriptorForType().getOneofs().stream()
@@ -164,7 +164,7 @@ public final class PromptAdminClient {
             System.out.println(JsonFormat.printer().omittingInsignificantWhitespace().print(reply));
             return selected.getName().equals("error") ? 1 : 0;
         } catch (Exception error) {
-            // 不回显请求、远程异常正文、注册中心地址或凭据。
+            // 仅输出操作结果及安全错误类别。
             System.err.println("RACING_PROMPT_ADMIN_ERROR=" + error.getClass().getSimpleName());
             return 1;
         } finally {

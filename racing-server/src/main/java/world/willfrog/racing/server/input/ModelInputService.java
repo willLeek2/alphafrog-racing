@@ -75,7 +75,7 @@ public class ModelInputService {
         return record.getReceipt();
     }
 
-    /** 公共远程入口必须先执行GetModelInput独立授权；当前该权限尚未开放。 */
+    /** 远程入口先执行GetModelInput独立授权；当前入口按拒绝访问处理。 */
     @Transactional(readOnly = true)
     public ModelInputRecord get(AuthorizedCall call, GetModelInputRequest request) {
         requireContext(call, request == null ? null : request.getContext());
@@ -129,7 +129,7 @@ public class ModelInputService {
             }
             return result.build();
         } catch (Exception invalid) {
-            // JSON解析异常可能携带原正文，不能把原异常传给远程调用或日志。
+            // JSON解析异常可能包含原正文，因此仅传递稳定错误类别。
             throw failure("INPUT_STORE_UNCONFIRMED", "已保存的模型输入无法完整还原");
         }
     }

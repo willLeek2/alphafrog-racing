@@ -14,7 +14,7 @@ import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import world.willfrog.racing.idl.*;
 
-/** 使用公共 MyBatis 会话和事务；JSON 中的候选原文作为字符串保存，不重新格式化候选值。 */
+/** 使用公共MyBatis会话与事务，候选JSON按原始字符串保存。 */
 @Repository
 @Transactional(propagation = Propagation.MANDATORY)
 public class MyBatisExperimentConfigurationRepository implements ExperimentConfigurationRepository {

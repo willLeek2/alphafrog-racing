@@ -6,7 +6,7 @@ package world.willfrog.racing.idl;
 import "common.proto";
 import "google/protobuf/timestamp.proto";
 
-// 资源所属范围和读取授权均使用泳道创建编号，不以路由标签或根编号代替。
+// 资源范围和读取授权均使用泳道创建编号。
 message PromptScope {
   string environment = 1;
   string scope_instance_id = 2;
@@ -22,7 +22,7 @@ message PromptSetLocator {
   string prompt_set_id = 2;
 }
 
-// version必须为明确的已保存版本；0不表示最新或普通默认。
+// version填写明确的已保存版本，取值必须大于0。
 message PromptVersionRef {
   PromptScope scope = 1;
   string prompt_id = 2;
@@ -79,7 +79,7 @@ message PromptVariableDeclaration {
   optional string default_value = 4;
 }
 
-// 正文仍保持不变，授权可以按当前修订调整；空清单不代表公开读取。
+// 正文版本保持固定，读取授权按当前修订调整；空清单表示无授权对象。
 message PromptVersionAuthorization {
   repeated PromptScope readable_scopes = 1;
   int64 revision = 2;
@@ -97,7 +97,7 @@ message PromptVersionInput {
   repeated PromptVariableDeclaration variables = 3;
   string purpose = 4;
   repeated PromptScope readable_scopes = 5;
-  // 导入来源用于复核及识别同一导入重发，不由通用operation_id代替。
+  // 导入来源用于核对来源修订并识别同一导入的重发。
   PromptImportOrigin import_origin = 6;
 }
 
@@ -161,7 +161,7 @@ message UpdatePromptVersionAuthorizationRequest {
 message GetPromptRequest {
   RuntimeCallContext context = 1;
   PromptLocator prompt = 2;
-  // 不填写时只查询命名记录，不隐式读取当前默认正文。
+  // 缺省时仅查询命名记录；指定版本后读取对应正文。
   optional int64 version = 3;
 }
 
@@ -249,7 +249,7 @@ message ListPromptVersionsReply {
 
 message ReadPromptVersionsReply {
   oneof result {
-    // 顺序与请求一致；任一项用途或授权检查失败时返回错误，不改选其他版。
+    // 返回顺序与请求一致，全部成员通过用途及授权检查后返回。
     PromptVersionList versions = 1;
     RacingError error = 2;
   }
@@ -425,18 +425,18 @@ message PromptSetDefaultChoice {
 
 message PromptSelectionOrigin {
   PromptScope source_scope = 1;
-  // 记录实际读取的默认指针修订，而非正文版本号。
+  // 记录实际读取的默认指针修订。
   int64 default_revision = 2;
   string business_name = 3;
   oneof source {
-    // 未参加实验的普通默认来源，沿用原字段编号。
+    // 普通默认的实际选择来源。
     ValueSource value_source = 4;
     // 包含实验返回普通默认、候选或结束固定值的真实来源。
     PromptExperimentSource experiment = 5;
   }
 }
 
-// 根选择也是跨服务的集合绑定；公共上下文不反向依赖本消息。
+// 根选择保存跨服务调用所需的集合绑定。
 message PromptSelection {
   string selection_id = 1;
   RootIdentity root = 2;
@@ -449,7 +449,7 @@ message PromptSelection {
 
 message ResolvePromptSelectionRequest {
   RuntimeCallContext context = 1;
-  // 同一根与同一业务位置保持此键稳定，不按模型调用次数生成。
+  // 同一根与同一业务位置使用稳定的选择键。
   string selection_key = 2;
   oneof ordinary_default {
     PromptDefaultChoice prompt_default = 3;
@@ -482,7 +482,7 @@ message PromptReferenceOwner {
   int64 revision = 4;
 }
 
-// 供同一事务中的业务服务交换明确清单，不作为独立远程写接口。
+// 供同一事务中的内部业务服务交换明确引用清单。
 message PromptReferenceReplacement {
   PromptReferenceOwner owner = 1;
   repeated PromptTargetRef targets = 2;
@@ -540,12 +540,12 @@ message DeletePromptTargetReply {
 
 message PromptExperimentSource {
   string experiment_id = 1;
-  // 结束固定值没有分配记录；不得为关联输入而编造编号。
+  // 结束固定值的分配编号保持缺省。
   optional string assignment_id = 2;
   ValueSource value_source = 3;
 }
 
-// 仅描述本次输入实际使用的指令，不把整套集合成员一并计作来源。
+// 仅记录本次输入实际使用的指令来源。
 message PromptInstructionSource {
   PromptVersionRef version = 1;
   string selection_id = 2;
@@ -553,7 +553,7 @@ message PromptInstructionSource {
   PromptSetVersionRef prompt_set_version = 4;
   string fragment_name = 5;
   PromptExperimentSource experiment = 6;
-  // 非实验的普通默认也保留真实来源，不为它编造实验编号。
-  // 有experiment时来源只保存在experiment.value_source中。
+  // 普通默认保留实际来源，实验编号保持缺省。
+  // 实验选择的来源保存在experiment.value_source中。
   ValueSource ordinary_default_source = 7;
 }

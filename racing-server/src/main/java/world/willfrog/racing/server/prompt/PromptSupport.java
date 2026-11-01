@@ -8,9 +8,7 @@ import java.util.UUID;
 import world.willfrog.racing.idl.*;
 import world.willfrog.racing.server.security.AuthorizedCall;
 
-/**
- * 业务范围、修订与序列化的共同检查，不读取外部配置或凭据。
- */
+/** 统一核对业务范围、修订和序列化格式。 */
 final class PromptSupport {
 
     private PromptSupport() {

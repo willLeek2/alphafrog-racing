@@ -3,9 +3,7 @@ package world.willfrog.racing.server.prompt;
 import java.util.List;
 import world.willfrog.racing.idl.*;
 
-/**
- * 所有写入与目标锁都复用业务事务，数据库实现不自行提交。
- */
+/** 写入及目标行锁共同使用业务事务。 */
 public interface PromptRepository {
 
     PromptRecord prompt(PromptLocator key, boolean lock);

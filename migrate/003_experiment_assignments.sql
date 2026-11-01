@@ -1,4 +1,4 @@
--- 先执行实验配置三表；本脚本由获准的数据库维护步骤执行，应用不自动建表。
+-- 实验分配关联已保存的实验配置。
 BEGIN;
 
 CREATE TABLE racing_experiment_assignment (

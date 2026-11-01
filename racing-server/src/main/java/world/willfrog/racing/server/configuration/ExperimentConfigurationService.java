@@ -134,7 +134,7 @@ public class ExperimentConfigurationService {
         Instant now = Instant.now();
         ExperimentRecord after = changed(before, now).setDeletedAt(now.toString()).build();
         repository.updateWithRevision(after, before.getRevision());
-        // 软删除保留历史配置及其正文引用，不将历史关联当作活动依赖。
+        // 软删除保留历史配置及正文引用，活动依赖单独检查。
         appendOperation(call, "DELETE", before.getRevision(), after, null, now);
         return after;
     }

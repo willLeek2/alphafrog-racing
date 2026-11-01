@@ -103,7 +103,7 @@ public final class RpcSmokeClient {
             System.out.println("RACING_RPC_SMOKE_MATCH=" + matches);
             return matches ? 0 : 1;
         } catch (Exception error) {
-            // 错误类别供自动执行器判定；注册中心地址及凭据不进入摘要。
+            // 仅输出错误类别，供自动执行器判断结果。
             System.err.println("RACING_RPC_SMOKE_ERROR=" + error.getClass().getSimpleName());
             return 1;
         } finally {

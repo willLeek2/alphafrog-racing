@@ -21,7 +21,7 @@ import world.willfrog.racing.idl.DubboRacingServiceTriple.RacingServiceImplBase;
 import world.willfrog.racing.server.security.RacingServiceException;
 import world.willfrog.racing.server.security.ServiceAuthorization;
 
-/** 统一远程入口；上下文确认不创建实验分配或提示词选择。 */
+/** 统一鉴权并核对上下文，将业务请求交给对应服务。 */
 @DubboService
 @Service
 public final class RacingServiceImpl extends RacingServiceImplBase {

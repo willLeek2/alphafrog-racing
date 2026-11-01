@@ -5,15 +5,15 @@ package world.willfrog.racing.idl;
 
 import "common.proto";
 
-// 结果查询使用开发者授权和原实例编号。它回答实际使用和调用，不代替分配历史，也不返回完整模型输入。
+// 按开发者授权及原实例编号查询实际使用与调用；分配历史和完整模型输入通过各自接口读取。
 message QueryExperimentResultRequest {
   string environment = 1;
   string scope_instance_id = 2;
-  // 空字符串表示不按实验编号筛选。
+  // 空字符串表示查询获准范围内的全部实验。
   string experiment_id = 3;
-  // 未设置表示不按配置版本筛选。设置时必须大于 0。
+  // 设置时必须大于0，缺省表示查询全部配置版本。
   optional int64 configuration_version = 4;
-  // 空字符串表示不按实际采用值筛选。
+  // 空字符串表示查询全部实际采用值。
   string adopted_value_json = 5;
   int32 offset = 6;
   // 0 表示默认 50 条，最大 200 条。
@@ -102,7 +102,7 @@ message DeleteExperimentResultReply {
   }
 }
 
-// 筛选与查询明细相同。run_mode 为空表示不按运行方式筛选。
+// 沿用明细查询的筛选规则，run_mode为空表示查询全部运行方式。
 message SummarizeExperimentResultRequest {
   string environment = 1;
   string scope_instance_id = 2;

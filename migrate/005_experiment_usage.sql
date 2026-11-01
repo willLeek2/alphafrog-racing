@@ -1,4 +1,4 @@
--- 由获准的数据库维护步骤执行；应用启动不自动建表。
+-- 实际使用记录与结果反馈分别保存。
 CREATE TABLE IF NOT EXISTS racing_experiment_usage (
     usage_id uuid PRIMARY KEY,
     service_principal text NOT NULL,

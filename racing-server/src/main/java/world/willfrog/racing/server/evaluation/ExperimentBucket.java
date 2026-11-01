@@ -10,17 +10,16 @@ import java.util.Arrays;
 import java.util.Objects;
 
 /**
- * 为根运行首次参与实验计算候选。已有分配必须读取持久记录，不能重新调用本类覆盖。
- *
- * <p>散列输入包含业务创建编号；实际路由标签和构建代际不参与分配。
- * 调用方负责确认配置和候选 JSON 合法，并在保存实际采用的记录后返回业务值。</p>
+ * 计算根运行首次参与实验的候选。
+ * <p>散列输入采用业务创建身份；已有分配由持久记录返回。
+ * 调用方核对配置和候选JSON，并在保存实际分配后返回业务值。</p>
  */
 public final class ExperimentBucket {
 
     private static final String HASH_DOMAIN = "racing-experiment-assignment-v1";
     private static final BigDecimal HASH_SPACE = new BigDecimal(BigInteger.ONE.shiftLeft(Long.SIZE));
 
-    /** 使用配置比例选择候选，保留候选原始值及标识，不解释业务 JSON。 */
+    /** 按配置比例选择候选，原样保留候选值和标识。 */
     public Candidate select(EvaluationKey key, Candidate first, Candidate second) {
         Objects.requireNonNull(key, "取值身份不能为空");
         Objects.requireNonNull(first, "第一个候选不能为空");

@@ -2,7 +2,7 @@ package world.willfrog.racing.server.input;
 
 import java.time.OffsetDateTime;
 
-/** 数据库中的实际输入；正文保持原字符串，不经JSON重新序列化。 */
+/** 保存数据库中的实际输入，正文保留原始字符串。 */
 public record ModelInputRow(String recordId, String servicePrincipal, String environment,
         String scopeInstanceId, String ownerNamespace, String ownerKind, String ownerScopeInstanceId,
         String rootId, String currentRunId, String logicalCallId, String attemptId, String endpointName,

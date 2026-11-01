@@ -14,7 +14,7 @@ message EvaluateRequest {
 
 message EvaluationValue {
   string value_json = 1;
-  // 已结束且无原记录时不新建分配，该字段为空。
+  // 已结束且没有原记录时，分配字段保持为空。
   string assignment_id = 2;
   ValueSource source = 3;
   RuntimeIdentity actual_target = 4;

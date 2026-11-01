@@ -123,7 +123,7 @@ public final class ExperimentConfigurationClient {
                     .omittingInsignificantWhitespace().print(reply));
             return 0;
         } catch (Exception error) {
-            // 请求可能包含正文，连接异常可能含凭据地址；这里只输出错误类别。
+            // 连接异常可能包含正文或凭据地址，因此仅输出错误类别。
             System.err.println("RACING_EXPERIMENT_CLIENT_ERROR=" + error.getClass().getSimpleName());
             return 1;
         } finally {

@@ -1,4 +1,4 @@
--- 由获准的数据库维护步骤执行；应用启动不自动建表。
+-- 实验主记录、发布版本及操作历史使用独立表保存。
 CREATE TABLE IF NOT EXISTS racing_experiment (
     environment text NOT NULL,
     scope_instance_id text NOT NULL,

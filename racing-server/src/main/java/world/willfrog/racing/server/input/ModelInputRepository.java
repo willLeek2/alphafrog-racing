@@ -2,7 +2,7 @@ package world.willfrog.racing.server.input;
 
 import org.springframework.stereotype.Repository;
 
-/** 复用公共数据源和调用方事务，不另建连接或提交。 */
+/** 复用公共数据源与调用方事务。 */
 @Repository
 public class ModelInputRepository {
     private final ModelInputMapper mapper;

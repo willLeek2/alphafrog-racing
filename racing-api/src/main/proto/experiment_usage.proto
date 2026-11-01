@@ -5,7 +5,7 @@ package world.willfrog.racing.idl;
 
 import "common.proto";
 
-// 一次实际使用。结果正文留空表示这次请求不改已有反馈。
+// 一次实际使用；结果正文留空时保留已有反馈。
 message RecordExperimentUsageRequest {
   RuntimeCallContext context = 1;
   string experiment_id = 2;

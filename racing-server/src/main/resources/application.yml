@@ -17,7 +17,7 @@ spring:
 dubbo:
   application:
     name: racing-server
-    # 与现有服务保持一致，使用接口级服务发现。
+    # 使用接口级服务发现。
     register-mode: interface
   registry:
     address: ${RACING_REGISTRY_ADDRESS:nacos://${NACOS_ADDRESS:127.0.0.1}:8848}

@@ -15,7 +15,7 @@ import org.apache.dubbo.rpc.RpcContext;
 import org.springframework.stereotype.Component;
 import world.willfrog.racing.server.config.RacingRuntimeProperties;
 
-/** 核对开发者钥匙和原实例范围。入口传入动作名，不与当前进程身份比较。 */
+/** 按入口动作、开发者密钥及原实例范围执行授权检查。 */
 @Component
 public final class DeveloperAuthorization {
     public static final String KEY_ID_ATTACHMENT = "racing.developer-key-id";

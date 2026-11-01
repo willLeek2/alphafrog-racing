@@ -63,12 +63,12 @@ public final class ExperimentEvaluationService {
             });
             return withTarget(value, call);
         } catch (DataAccessException | TransactionException failure) {
-            // 原事务已经退出；提交响应丢失时仅独立读回，不重新生成候选。
+            // 原事务已结束；提交响应丢失时独立读回原分配。
             try {
                 var saved = transaction.execute(status -> assignments.find(key));
                 if (saved != null) return withTarget(saved, call);
             } catch (DataAccessException | TransactionException ignored) {
-                // 不返回底层SQL、连接信息或未经确认的取值。
+                // 返回稳定业务错误，保护数据库连接及未确认取值。
             }
             throw unconfirmed();
         }
